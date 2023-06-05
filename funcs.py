@@ -1,6 +1,9 @@
 import pandas as pd
 import streamlit as st
 import re
+from pandas.api.types import (
+    is_datetime64_dtype,
+    is_integer_dtype)
 
 
 def load_data():
@@ -40,11 +43,9 @@ def generate_pilots_data(raw_database):
 
     dep_loc_list = []
     dep_date_list = []
-    dep_hora_list = []
 
     pouso_loc_list = []
     pouso_date_list = []
-    pouso_hora_list = []
 
     posicao_list = []
     trigrama_list = []
@@ -77,7 +78,7 @@ def generate_pilots_data(raw_database):
         descidas = row[7]
         dados_dep = row[8]
         dados_pouso = row[9]
-        submission_date = row[19]
+        submission_date = row[18]
         submission_id = row[10]
         matricula_anv = row[11]
         tipo_reg = row[12]
@@ -141,13 +142,11 @@ def generate_pilots_data(raw_database):
             desc_tipo_list.append(desc_tipo)
             desc_proc_list.append(desc_proc)
             desc_qtd_list.append(desc_qtd)
-            dep_date_list.append(dep_date)
+            dep_date_list.append(pd.to_datetime(f'{dep_date} {dep_hora}', format='%d-%m-%Y %H:%M'))
             dep_loc_list.append(dep_loc)
             pouso_loc_list.append(pouso_loc)
-            dep_hora_list.append(dep_hora)
             tipo_reg_list.append(tipo_reg)
-            pouso_date_list.append(pouso_date)
-            pouso_hora_list.append(pouso_date)
+            pouso_date_list.append(pd.to_datetime(f'{pouso_date} {pouso_hora}', format='%d-%m-%Y %H:%M'))
             arr_ar_list.append(arr_ar)
             abt_voo_motivo_list.append(abt_voo_motivo)
             abt_solo_motivo_list.append(abt_solo_motivo)
@@ -159,11 +158,9 @@ def generate_pilots_data(raw_database):
                                     'Matrícula da aeronave': matricula_anv_list,
                                     'Tipo de Registro': tipo_reg_list,
                                     'Origem': dep_loc_list,
-                                    'Data - DEP': dep_date_list,
-                                    'Hora - DEP': dep_hora_list,
+                                    'Data/Hora - DEP': dep_date_list,
                                     'Destino': pouso_loc_list,
-                                    'Data - Pouso': pouso_date_list,
-                                    'Hora - Pouso': pouso_hora_list,
+                                    'Data/Hora - Pouso': pouso_date_list,
                                     'Posição': posicao_list,
                                     'Trigrama': trigrama_list,
                                     'Função': funcao_list,
@@ -183,5 +180,40 @@ def generate_pilots_data(raw_database):
                                     'Motivo abortiva no solo': abt_solo_motivo_list,
                                     'Observações': obs_list,
                                     'Edit Link': edit_link_list})
+    return pilots_database
 
-    st.write(pilots_database)
+
+def filter_dataframe(df: pd.DataFrame):
+    modify = st.checkbox('Filtrar dados.')
+    if not modify:
+        return df
+    df = df.copy()
+    modification_container = st.container()
+    with modification_container:
+        to_filter_columns = st.multiselect('Escolha as colunas que deseja filtrar', df.columns)
+    for column in to_filter_columns:
+        left, right = st.columns((1, 30))
+        left.write("∟")
+        if is_datetime64_dtype(df[column]):
+            user_date_input = right.date_input(f'Escolha as data desejadas para {column}...',
+                                               value=(
+                                                   df[column].min(),
+                                                   df[column].max()
+                                               ))
+            if len(user_date_input) == 2:
+                user_date_input = tuple(map(pd.to_datetime, user_date_input))
+                start_date, end_date = user_date_input
+                df = df[df[column].between(start_date, end_date)]
+        elif is_integer_dtype:
+            user_number_input = right.slider(f'Insira o número para {column}',
+                                             min_value=0,
+                                             max_value=20,
+                                             value=[int(df[column].min()), int(df[column].max())])
+            if user_number_input:
+                number_min, number_max = user_number_input
+                df = df[df[column].between(number_min, number_max)]
+        else:
+            user_text_input = right.text_input('Escreva o filtro que deseja...')
+            if user_text_input:
+                df = df[df[column].astype(str).str.contains(user_text_input)]
+    return df

@@ -1,18 +1,22 @@
 import pandas as pd
 import streamlit as st
 import re
-from pandas.api.types import (
-    is_datetime64_dtype,
-    is_integer_dtype)
+from pandas.api.types import (is_datetime64_dtype, is_integer_dtype)
+import datetime
+import constants
+import numpy as np
+import math
+import altair as alt
 
-
+@st.cache_data
 def load_data():
-    sheet_id = '1RJlJBlPjvRitroGBc7GoutKFXnYJor5rwEN8ax3f6oM'
-    df = pd.read_excel(f'https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx')
+    sheet_id = '1VO7IlI6DntRmN8MPGUObcCY3lV4N4THfD0MgaNr_8kU'
+    df = pd.read_excel(f'https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx', engine='openpyxl')
     df['Submission ID'] = df['Submission ID'].astype(str)
     return df
 
 
+@st.cache_data
 def generate_pilots_data(raw_database):
     mid_database = raw_database.filter(items=['Dados dos Tripulantes',
                                               'Tempo total de voo',
@@ -106,8 +110,9 @@ def generate_pilots_data(raw_database):
             desc_proc = ''
             for descida in match_obj_desc:
                 desc_loc += f'{descida[0]}, '
-                desc_qtd += int(descida[1])
-                desc_tipo += f'{descida[2]}, '
+                desc_parcial = int(descida[1])
+                desc_qtd += desc_parcial
+                desc_tipo += f'{descida[2]}, ' * desc_parcial
                 desc_proc += f'{descida[3]}, '
             desc_loc = desc_loc[0:-2]
             desc_tipo = desc_tipo[0:-2]
@@ -184,36 +189,156 @@ def generate_pilots_data(raw_database):
 
 
 def filter_dataframe(df: pd.DataFrame):
-    modify = st.checkbox('Filtrar dados.')
-    if not modify:
-        return df
-    df = df.copy()
+    # modify = st.sidebar.checkbox('Filtrar dados.')
+    # if not modify:
+    #     return df
+    # df = df.copy()
     modification_container = st.container()
     with modification_container:
-        to_filter_columns = st.multiselect('Escolha as colunas que deseja filtrar', df.columns)
+        to_filter_columns = st.sidebar.multiselect('Escolha as colunas que deseja filtrar', df.columns)
     for column in to_filter_columns:
-        left, right = st.columns((1, 30))
-        left.write("∟")
         if is_datetime64_dtype(df[column]):
-            user_date_input = right.date_input(f'Escolha as data desejadas para {column}...',
-                                               value=(
-                                                   df[column].min(),
-                                                   df[column].max()
-                                               ))
+            user_date_input = st.sidebar.date_input(f'Ddatas para {column}',
+                                                    value=(df[column].min(),
+                                                           df[column].max()
+                                                           ))
             if len(user_date_input) == 2:
                 user_date_input = tuple(map(pd.to_datetime, user_date_input))
                 start_date, end_date = user_date_input
                 df = df[df[column].between(start_date, end_date)]
-        elif is_integer_dtype:
-            user_number_input = right.slider(f'Insira o número para {column}',
-                                             min_value=0,
-                                             max_value=20,
-                                             value=[int(df[column].min()), int(df[column].max())])
+        elif is_integer_dtype(df[column]):
+            st.write('acha que é inteiro')
+            user_number_input = st.sidebar.slider(f'Número {column}',
+                                                  min_value=0,
+                                                  max_value=20,
+                                                  value=[int(df[column].min()), int(df[column].max())])
             if user_number_input:
                 number_min, number_max = user_number_input
                 df = df[df[column].between(number_min, number_max)]
         else:
-            user_text_input = right.text_input('Escreva o filtro que deseja...')
+            user_text_input = st.sidebar.text_input('Procurar por...')
             if user_text_input:
                 df = df[df[column].astype(str).str.contains(user_text_input)]
     return df
+
+
+def count_tipo_proc(value: str):
+    pr = value.replace(',', '').strip().split(' ').count('PR')
+    np = value.replace(',', '').strip().split(' ').count('NP')
+    return {'PR': pr,
+            'NP': np}
+
+
+def colorir_cesta_basica_esquadrao(val):
+    if val > 0:
+        color = 'rgba(0, 255, 0, 0.2)'
+        text_color = 'rgba(0, 149, 16, 1)'
+    else:
+        color = 'rgba(255, 0, 0, 0.25)'
+        text_color = 'rgba(255, 0, 0, 1)'
+    return f'background-color: {color}; color: {text_color}; font-weight: bold'
+
+
+def colorir_cesta_basica_comprep(val):
+    if val >= 3:
+        background_color = 'rgba(0, 266, 0, 0.2)'
+        text_color = 'rgba(0, 149, 16, 1)'
+    elif val >= 2:
+        background_color = 'rgba(255, 255, 0, 0.4)'
+        text_color = 'black'
+    else:
+        background_color = 'rgba(255, 0, 0, 0.25)'
+        text_color = 'rgba(255, 0, 0, 1)'
+    return f'background-color: {background_color}; color: {text_color}; font-weight: bold'
+
+
+def generate_cesta_basica_table(data):
+    # Filtrando os pilotos para cesta básica
+    temp_df = data[(data['Posição'] == 'LSP') |
+                   ((data['Posição'] == 'RSP') &
+                    (data['Função'] == 'IN')) &
+                   (data['Data/Hora - Pouso'].dt.quarter.isin([1 + (datetime.date.today().month - 1) // 3]))
+                   ].filter(items=['Trigrama',
+                                   'Flaps 22',
+                                   'Arremetida no Ar',
+                                   'IFR sem AP',
+                                   'Descida - Tipo',
+                                   'Tempo Noturno'])
+
+    # Adicionando coluna de Procedimentos de precisão
+    temp_df['Precisão'] = temp_df['Descida - Tipo'].apply(lambda x: count_tipo_proc(x)['PR'])
+    temp_df['Não Precisão'] = temp_df['Descida - Tipo'].apply(lambda x: count_tipo_proc(x)['NP'])
+    temp_df['Noturno'] = temp_df['Tempo Noturno'].apply(lambda x: 1 if x != datetime.time(0, 0, 0) else 0)
+    temp_df = temp_df.drop(['Descida - Tipo', 'Tempo Noturno'], axis=1)
+
+    cesta_basica_df = temp_df.groupby('Trigrama').aggregate({'Flaps 22': 'sum',
+                                                             'Arremetida no Ar': 'sum',
+                                                             'IFR sem AP': 'sum',
+                                                             'Noturno': 'sum',
+                                                             'Precisão': 'sum',
+                                                             'Não Precisão': 'sum'})
+
+    # style
+    th_props = [
+        ('font-size', '16px'),
+        ('text-align', 'center'),
+        ('color', '#6d6d6d'),
+        ('background-color', '#f7ffff')
+    ]
+
+    styles = [
+        dict(selector='th', props=th_props)
+    ]
+    tabela = st.dataframe(cesta_basica_df.style.applymap(colorir_cesta_basica_esquadrao, subset=['Flaps 22',
+                                                                                             'Arremetida no Ar',
+                                                                                             'IFR sem AP',
+                                                                                             'Noturno']).applymap(
+        colorir_cesta_basica_comprep,
+        subset=['Precisão',
+                'Não Precisão']).set_table_styles(styles))
+    return tabela
+
+
+def generate_pilots_adapt_table(pilots_database):
+    # Criando DataFrame para gerar gráfico de adaptação
+    # Filtrando dados
+    adaptacao_database = pilots_database[(pilots_database['Posição'] == 'LSP') |
+                                         (pilots_database['Posição'] == 'RSP')].filter(items=['Trigrama',
+                                                                                              'Data/Hora - Pouso']). \
+        groupby('Trigrama').aggregate({'Data/Hora - Pouso': 'max'})
+
+    # Calculando quantos dias sem voar
+    adaptacao_database['Hoje'] = pd.to_datetime(datetime.date.today())
+    adaptacao_database['Dias sem voar'] = (
+            (adaptacao_database['Hoje'] - adaptacao_database['Data/Hora - Pouso']) / np.timedelta64(1, 'D')).apply(
+        lambda x: math.ceil(x))
+    adaptacao_database = adaptacao_database.drop(['Hoje'], axis=1)
+
+    # Formatando data do último voo para o tooltips hover
+    adaptacao_database['Último voo'] = adaptacao_database['Data/Hora - Pouso'].apply(lambda x: x.strftime("%d/%m/%Y"))
+    adaptacao_database = adaptacao_database.reset_index()
+
+    # Inserindo a qualificação Opeacional, max de dias e limite de data sem voar, de acordo com o arquivo constants.
+    adaptacao_database['Qualificação Operacional'] = adaptacao_database['Trigrama'].apply(
+        lambda x: constants.qualificacao_opr[x])
+    adaptacao_database['Max dias'] = adaptacao_database['Qualificação Operacional'].apply(
+        lambda x: constants.max_adaptacao[x])
+    adaptacao_database['Limite'] = (adaptacao_database['Data/Hora - Pouso'] + adaptacao_database['Max dias'].apply(
+        lambda x: pd.Timedelta(days=x))).apply(lambda x: x.strftime('%d/%m/%Y'))
+    adaptacao_database = adaptacao_database.sort_values('Qualificação Operacional')
+
+    chart_base = alt.Chart(adaptacao_database)
+
+    chart1 = chart_base.mark_bar(opacity=1).encode(
+        x=alt.X('Trigrama', sort=alt.SortField(field='Max dias', order='descending'),
+                axis=alt.Axis(labelAngle=0, labelFontSize=16, labelColor='grey', title='')),
+        y=alt.Y('Dias sem voar', axis=alt.Axis(title='')),
+        color=alt.Color('Qualificação Operacional', legend=alt.Legend(orient='top'))
+    )
+
+    chart2 = chart1.mark_bar(opacity=0.25).encode(
+        y=alt.Y('Max dias'),
+        tooltip=['Último voo', 'Limite']
+    )
+
+    return adaptacao_database, (chart1 + chart2)

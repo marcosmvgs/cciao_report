@@ -8,6 +8,7 @@ import numpy as np
 import math
 import altair as alt
 
+
 @st.cache_data
 def load_data():
     sheet_id = '1VO7IlI6DntRmN8MPGUObcCY3lV4N4THfD0MgaNr_8kU'
@@ -271,6 +272,7 @@ def generate_cesta_basica_table(data):
     temp_df['Noturno'] = temp_df['Tempo Noturno'].apply(lambda x: 1 if x != datetime.time(0, 0, 0) else 0)
     temp_df = temp_df.drop(['Descida - Tipo', 'Tempo Noturno'], axis=1)
 
+
     cesta_basica_df = temp_df.groupby('Trigrama').aggregate({'Flaps 22': 'sum',
                                                              'Arremetida no Ar': 'sum',
                                                              'IFR sem AP': 'sum',
@@ -278,24 +280,13 @@ def generate_cesta_basica_table(data):
                                                              'Precisão': 'sum',
                                                              'Não Precisão': 'sum'})
 
-    # style
-    th_props = [
-        ('font-size', '16px'),
-        ('text-align', 'center'),
-        ('color', '#6d6d6d'),
-        ('background-color', '#f7ffff')
-    ]
-
-    styles = [
-        dict(selector='th', props=th_props)
-    ]
     tabela = st.dataframe(cesta_basica_df.style.applymap(colorir_cesta_basica_esquadrao, subset=['Flaps 22',
-                                                                                             'Arremetida no Ar',
-                                                                                             'IFR sem AP',
-                                                                                             'Noturno']).applymap(
+                                                                                                 'Arremetida no Ar',
+                                                                                                 'IFR sem AP',
+                                                                                                 'Noturno']).applymap(
         colorir_cesta_basica_comprep,
         subset=['Precisão',
-                'Não Precisão']).set_table_styles(styles))
+                'Não Precisão']))
     return tabela
 
 
@@ -325,12 +316,12 @@ def generate_pilots_adapt_table(pilots_database):
         lambda x: constants.max_adaptacao[x])
     adaptacao_database['Limite'] = (adaptacao_database['Data/Hora - Pouso'] + adaptacao_database['Max dias'].apply(
         lambda x: pd.Timedelta(days=x))).apply(lambda x: x.strftime('%d/%m/%Y'))
-    adaptacao_database = adaptacao_database.sort_values('Qualificação Operacional')
+    adaptacao_database['Criterio para barras'] = adaptacao_database.apply(lambda x: organizar_barras(x), axis=1)
 
     chart_base = alt.Chart(adaptacao_database)
 
     chart1 = chart_base.mark_bar(opacity=1).encode(
-        x=alt.X('Trigrama', sort=alt.SortField(field='Max dias', order='descending'),
+        x=alt.X('Trigrama', sort=alt.SortField(field='Criterio para barras', order='descending'),
                 axis=alt.Axis(labelAngle=0, labelFontSize=16, labelColor='grey', title='')),
         y=alt.Y('Dias sem voar', axis=alt.Axis(title='')),
         color=alt.Color('Qualificação Operacional', legend=alt.Legend(orient='top'))
@@ -342,3 +333,12 @@ def generate_pilots_adapt_table(pilots_database):
     )
 
     return adaptacao_database, (chart1 + chart2)
+
+
+def organizar_barras(row):
+    if row['Qualificação Operacional'] == 'AL':
+        return row['Dias sem voar'] + 365
+    elif row['Qualificação Operacional'] == 'OP':
+        return row['Dias sem voar'] + (2 * 365 + 1)
+    else:
+        return row['Dias sem voar'] + (3 * 365 + 1)

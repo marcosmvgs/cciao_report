@@ -46,6 +46,50 @@ with col1:
     st.markdown(f"<h4 style='text-align: center; color: black;'>Cesta básica - {quarter}º "
                 f"trimestre</h1>", unsafe_allow_html=True)
     funcs.generate_cesta_basica_table(pilots_database)
+
+
+    # Filtrando dados do pau de sebo
+    pau_sebo = pilots_database[(pilots_database['Posição'] == 'LSP') | (pilots_database['Posição'] == 'RSP')].filter(
+        items=['Trigrama', 'Tempo total de voo', 'Posição']
+    )
+
+    def make_delta(time):
+        string_time = time.strftime("%H:%M:%S")
+        h, m, s = string_time.split(':')
+        m = int(m) / 60
+        s = int(s) / 3600
+        h = int(h) + m + s
+        return h
+    def formartar_tempo(hour):
+        new_hour = int(hour // 1)
+        new_minute = int((hour % 1) * 60)
+        if new_minute <= 9:
+            hour_formated = f'{new_hour}:0{new_minute}'
+        else:
+            hour_formated = f'{new_hour}:{new_minute}'
+
+        return hour_formated
+
+
+    pau_sebo['Horas totais'] = pau_sebo['Tempo total de voo'].apply(lambda x: make_delta(x))
+    pau_sebo_agrupado = pau_sebo.groupby(['Trigrama', 'Posição']).aggregate({'Horas totais': 'sum'}).reset_index()
+    pau_sebo_agrupado['Horas Totais'] = pau_sebo_agrupado['Horas totais'].apply(lambda x: formartar_tempo(x))
+
+    chart1 = alt.Chart(pau_sebo_agrupado).mark_bar(opacity=0.8).encode(
+        x=alt.X('Trigrama:N', sort=alt.SortField(field='Horas totais', order='descending')),
+        y=alt.Y('Horas totais:Q', axis=alt.Axis(title='')),
+        color=alt.Color('Posição:N', legend=alt.Legend(orient='top')),
+        tooltip=['Horas Totais']
+    )
+    st.altair_chart(chart1.configure_axis(
+        labelAngle=0,
+        labelFontSize=16,
+        labelColor='grey'
+    ), use_container_width=True)
+
+
+
+
 with col2:
     st.markdown(f"<h4 style='text-align: center; color: black;'>Adaptação Pilotos</h1>", unsafe_allow_html=True)
 

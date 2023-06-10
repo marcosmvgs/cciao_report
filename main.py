@@ -2,7 +2,7 @@ import datetime
 import numpy as np
 import pandas as pd
 import streamlit as st
-
+import openpyxl
 import constants
 import funcs
 from PIL import Image

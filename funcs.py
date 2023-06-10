@@ -342,3 +342,68 @@ def organizar_barras(row):
         return row['Dias sem voar'] + (2 * 365 + 1)
     else:
         return row['Dias sem voar'] + (3 * 365 + 1)
+
+
+def make_delta(time):
+    string_time = time.strftime("%H:%M:%S")
+    h, m, s = string_time.split(':')
+    m = int(m) / 60
+    s = int(s) / 3600
+    h = int(h) + m + s
+    return h
+
+
+def formartar_tempo(hour):
+    new_hour = int(hour // 1)
+    new_minute = int((hour % 1) * 60)
+    if new_minute <= 9:
+        hour_formated = f'{new_hour}:0{new_minute}'
+    else:
+        hour_formated = f'{new_hour}:{new_minute}'
+
+    return hour_formated
+
+
+def generate_pau_sebo_table(pilots_database):
+    pau_sebo = pilots_database[(pilots_database['Posição'] == 'LSP') | (pilots_database['Posição'] == 'RSP')].filter(
+        items=['Trigrama', 'Tempo total de voo', 'Posição']
+    )
+
+    pau_sebo['Horas totais'] = pau_sebo['Tempo total de voo'].apply(lambda x: make_delta(x))
+    pau_sebo_agrupado = pau_sebo.pivot_table(values='Horas totais', index='Trigrama', columns='Posição').reset_index()
+    pau_sebo_agrupado = pau_sebo_agrupado.fillna(0)
+    pau_sebo_agrupado['Horas totais'] = pau_sebo_agrupado['LSP'] + pau_sebo_agrupado['RSP']
+    pau_sebo_agrupado['Horas Totais'] = pau_sebo_agrupado['Horas totais'].apply(lambda x: formartar_tempo(x))
+    pau_sebo_agrupado['Meta'] = 130
+    pau_sebo_agrupado['LSP:'] = pau_sebo_agrupado['LSP'].apply(lambda x: formartar_tempo(x))
+    pau_sebo_agrupado['RSP:'] = pau_sebo_agrupado['RSP'].apply(lambda x: formartar_tempo(x))
+
+    chart2 = alt.Chart(pau_sebo_agrupado).mark_text(color='red',
+                                                    fontSize=16,
+                                                    dy=10).encode(
+        x=alt.X('Trigrama:N', sort=alt.EncodingSortField(field='Horas totais', order='descending', op='sum'),
+                axis=alt.Axis(title='')),
+        text='Horas Totais:N',
+        y='Horas totais:Q',
+    )
+
+    pau_sebo_chart_base = alt.Chart(pau_sebo_agrupado)
+    pau_sebo_chart1 = pau_sebo_chart_base.mark_bar(opacity=0.8).encode(
+        x=alt.X('Trigrama:N', sort=alt.EncodingSortField(field='Horas totais', order='descending', op='sum'),
+                axis=alt.Axis(labelAngle=0, labelFontSize=16, title='')),
+        y=alt.Y('Horas totais:Q', axis=alt.Axis(title='', labelFontSize=16)),
+        tooltip=['RSP:', 'LSP:'])
+
+    pau_sebo_chart2 = pau_sebo_chart1.mark_bar(color='red', opacity=0.8).encode(
+        y='LSP:Q')
+
+    pau_sebo_chart3 = pau_sebo_chart2.mark_bar(opacity=0.15,
+                                               color='grey').encode(y='Meta:Q')
+
+    pau_sebo_chart4 = pau_sebo_chart1.mark_text(fontSize=16,
+                                                dy=-10,
+                                                color='grey').encode(
+        text='Horas Totais',
+    )
+
+    st.altair_chart((pau_sebo_chart3 + pau_sebo_chart1 + pau_sebo_chart2 + pau_sebo_chart4), use_container_width=True)

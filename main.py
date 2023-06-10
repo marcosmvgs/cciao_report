@@ -60,6 +60,7 @@ with col1:
         s = int(s) / 3600
         h = int(h) + m + s
         return h
+
     def formartar_tempo(hour):
         new_hour = int(hour // 1)
         new_minute = int((hour % 1) * 60)
@@ -76,7 +77,7 @@ with col1:
     pau_sebo_agrupado['Horas Totais'] = pau_sebo_agrupado['Horas totais'].apply(lambda x: formartar_tempo(x))
 
     chart1 = alt.Chart(pau_sebo_agrupado).mark_bar(opacity=0.8).encode(
-        x=alt.X('Trigrama:N', sort=alt.SortField(field='Horas totais', order='descending')),
+        x=alt.X('Trigrama:N', sort=alt.SortField(field='Horas totais', order='descending'), axis=alt.Axis(title='')),
         y=alt.Y('Horas totais:Q', axis=alt.Axis(title='')),
         color=alt.Color('Posição:N', legend=alt.Legend(orient='top')),
         tooltip=['Horas Totais']

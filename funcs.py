@@ -196,10 +196,10 @@ def filter_dataframe(df: pd.DataFrame):
     # df = df.copy()
     modification_container = st.container()
     with modification_container:
-        to_filter_columns = st.sidebar.multiselect('Escolha as colunas que deseja filtrar', df.columns)
+        to_filter_columns = st.multiselect('Escolha as colunas que deseja filtrar', df.columns)
     for column in to_filter_columns:
         if is_datetime64_dtype(df[column]):
-            user_date_input = st.sidebar.date_input(f'Ddatas para {column}',
+            user_date_input = st.date_input(f'Ddatas para {column}',
                                                     value=(df[column].min(),
                                                            df[column].max()
                                                            ))
@@ -209,7 +209,7 @@ def filter_dataframe(df: pd.DataFrame):
                 df = df[df[column].between(start_date, end_date)]
         elif is_integer_dtype(df[column]):
             st.write('acha que é inteiro')
-            user_number_input = st.sidebar.slider(f'Número {column}',
+            user_number_input = st.slider(f'Número {column}',
                                                   min_value=0,
                                                   max_value=20,
                                                   value=[int(df[column].min()), int(df[column].max())])
@@ -217,7 +217,7 @@ def filter_dataframe(df: pd.DataFrame):
                 number_min, number_max = user_number_input
                 df = df[df[column].between(number_min, number_max)]
         else:
-            user_text_input = st.sidebar.text_input('Procurar por...')
+            user_text_input = st.text_input('Procurar por...')
             if user_text_input:
                 df = df[df[column].astype(str).str.contains(user_text_input)]
     return df
@@ -370,6 +370,7 @@ def generate_pau_sebo_table(pilots_database):
     )
 
     pau_sebo['Horas totais'] = pau_sebo['Tempo total de voo'].apply(lambda x: make_delta(x))
+    pau_sebo = pau_sebo.groupby(['Trigrama', 'Posição']).aggregate({'Horas totais':'sum'})
     pau_sebo_agrupado = pau_sebo.pivot_table(values='Horas totais', index='Trigrama', columns='Posição').reset_index()
     pau_sebo_agrupado = pau_sebo_agrupado.fillna(0)
     pau_sebo_agrupado['Horas totais'] = pau_sebo_agrupado['LSP'] + pau_sebo_agrupado['RSP']
@@ -377,15 +378,6 @@ def generate_pau_sebo_table(pilots_database):
     pau_sebo_agrupado['Meta'] = 130
     pau_sebo_agrupado['LSP:'] = pau_sebo_agrupado['LSP'].apply(lambda x: formartar_tempo(x))
     pau_sebo_agrupado['RSP:'] = pau_sebo_agrupado['RSP'].apply(lambda x: formartar_tempo(x))
-
-    chart2 = alt.Chart(pau_sebo_agrupado).mark_text(color='red',
-                                                    fontSize=16,
-                                                    dy=10).encode(
-        x=alt.X('Trigrama:N', sort=alt.EncodingSortField(field='Horas totais', order='descending', op='sum'),
-                axis=alt.Axis(title='')),
-        text='Horas Totais:N',
-        y='Horas totais:Q',
-    )
 
     pau_sebo_chart_base = alt.Chart(pau_sebo_agrupado)
     pau_sebo_chart1 = pau_sebo_chart_base.mark_bar(opacity=0.8).encode(
@@ -406,4 +398,5 @@ def generate_pau_sebo_table(pilots_database):
         text='Horas Totais',
     )
 
-    st.altair_chart((pau_sebo_chart3 + pau_sebo_chart1 + pau_sebo_chart2 + pau_sebo_chart4), use_container_width=True)
+    st.altair_chart((pau_sebo_chart3 + pau_sebo_chart1 + pau_sebo_chart2 + pau_sebo_chart4),
+                    use_container_width=True)

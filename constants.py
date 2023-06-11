@@ -1,3 +1,5 @@
+import pandas as pd
+
 aluno = 'AL'
 operacional = 'OP'
 instrutor = 'IN'
@@ -19,3 +21,7 @@ max_adaptacao = {
     operacional: 36,
     instrutor: 46
 }
+
+HORAS_TOTAIS = 1370
+HORAS_TOTAIS_E99 = 920
+HORAS_TOTAIS_R99 = 450

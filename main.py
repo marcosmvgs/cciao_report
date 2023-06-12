@@ -90,7 +90,7 @@ esquadrao_chart1 = esquadrao_chart_base.mark_area(line={'color': 'grey',
                                                         'opacity': 0.3},
                                                   opacity=0.5,
                                                   point={'color': 'black',
-                                                         'size': 70},
+                                                         'size': 90},
                                                   color=alt.Gradient(
                                                       gradient='linear',
                                                       stops=[alt.GradientStop(color='white', offset=0),
@@ -105,11 +105,24 @@ esquadrao_chart1 = esquadrao_chart_base.mark_area(line={'color': 'grey',
 
 esquadrao_chart2 = esquadrao_chart_base.mark_line().encode(
     x=alt.X('Data - DEP:T', timeUnit='month', title=''),
-    y=alt.Y('Tempo total de voo:Q', title=''),
+    y=alt.Y('Tempo total de voo:Q', axis=alt.Axis(title='')),
     color=alt.Color('Matrícula da aeronave:N', legend=alt.Legend(orient='top')),
 )
 
-st.altair_chart((esquadrao_chart1 + esquadrao_chart2), use_container_width=True)
+esquadrao_database_text = esquadrao_database.groupby(pd.Grouper(key='Data - DEP', freq='M')).aggregate({'Tempo total de voo': 'sum'})
+esquadrao_database_text.reset_index(inplace=True)
+esquadrao_database_text['Horas voadas'] = esquadrao_database_text['Tempo total de voo'].apply(lambda x: funcs.formartar_tempo(x))
+base_text_chart = alt.Chart(esquadrao_database_text)
+
+esquadrao_chart3 = base_text_chart.mark_text(fontSize=18,
+                                             dy=-15,
+                                             color='grey').encode(
+    text='Horas voadas:N',
+    x=alt.X('Data - DEP:T', timeUnit='month', title=''),
+    y='sum(Tempo total de voo)'
+)
+
+st.altair_chart((esquadrao_chart1 + esquadrao_chart2 + esquadrao_chart3), use_container_width=True)
 
 st.markdown('---')
 

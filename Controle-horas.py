@@ -9,8 +9,10 @@ import funcs
 from PIL import Image
 import os
 
+import tabela_indisponibilidade
+
 st.set_page_config(layout='wide',
-                   page_title='2º/6º GAV - Controle CCIAO',
+                   page_title='2º/6º GAV - CCIAO',
                    page_icon=':airplane')
 
 st.markdown(
@@ -85,6 +87,10 @@ esquadrao_agrupado2 = esquadrao_database.groupby(pd.Grouper(key='Data - DEP', fr
     {'Tempo total de voo': 'sum'})
 esquadrao_agrupado = esquadrao_agrupado.reset_index()
 esquadrao_chart_base = altair.Chart(esquadrao_agrupado)
+esquadrao_database_text = esquadrao_database.groupby(pd.Grouper(key='Data - DEP', freq='M')).aggregate({'Tempo total de voo': 'sum'})
+esquadrao_database_text.reset_index(inplace=True)
+esquadrao_database_text['Horas voadas'] = esquadrao_database_text['Tempo total de voo'].apply(lambda x: funcs.formartar_tempo(x))
+base_text_chart = alt.Chart(esquadrao_database_text)
 
 esquadrao_chart1 = esquadrao_chart_base.mark_area(line={'color': 'grey',
                                                         'opacity': 0.3},
@@ -101,6 +107,7 @@ esquadrao_chart1 = esquadrao_chart_base.mark_area(line={'color': 'grey',
                                                       y2=0)).encode(
     x=alt.X('Data - DEP:T', timeUnit='month', title=''),
     y='sum(Tempo total de voo)',
+    tooltip=['Data - DEP', 'sum(Tempo total de voo)']
 )
 
 esquadrao_chart2 = esquadrao_chart_base.mark_line().encode(
@@ -109,10 +116,6 @@ esquadrao_chart2 = esquadrao_chart_base.mark_line().encode(
     color=alt.Color('Matrícula da aeronave:N', legend=alt.Legend(orient='top')),
 )
 
-esquadrao_database_text = esquadrao_database.groupby(pd.Grouper(key='Data - DEP', freq='M')).aggregate({'Tempo total de voo': 'sum'})
-esquadrao_database_text.reset_index(inplace=True)
-esquadrao_database_text['Horas voadas'] = esquadrao_database_text['Tempo total de voo'].apply(lambda x: funcs.formartar_tempo(x))
-base_text_chart = alt.Chart(esquadrao_database_text)
 
 esquadrao_chart3 = base_text_chart.mark_text(fontSize=18,
                                              dy=-15,
@@ -158,4 +161,4 @@ with col2:
 st.sidebar.markdown('---')
 link_to_form = '[Adicionar Registro de Voo](https://form.jotform.com/231508987327062)'
 st.sidebar.markdown(f':pencil2: {link_to_form}', unsafe_allow_html=True)
-st.sidebar.write(f'Última atualização: {pilots_database["Data/Hora - Pouso"].max().strftime("%d/%m/%Y - %H:%M")}')
+st.sidebar.write(f'Última atualização: {pilots_database["Data/Hora - DEP"].max().strftime("%d/%m/%Y - %H:%M")}')

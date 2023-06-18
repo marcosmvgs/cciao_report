@@ -345,11 +345,19 @@ def organizar_barras(row):
 
 
 def make_delta(time):
-    string_time = time.strftime("%H:%M:%S")
-    h, m, s = string_time.split(':')
-    m = int(m) / 60
-    s = int(s) / 3600
-    h = int(h) + m + s
+    if not isinstance(time, str):
+        string_time = time.strftime("%H:%M:%S")
+    else:
+        string_time = time
+    try:
+        h, m, s = string_time.split(':')
+        m = int(m) / 60
+        s = int(s) / 3600
+        h = int(h) + m + s
+    except:
+        h, m = string_time.split(':')
+        m = int(m) / 60
+        h = int(h) + m
     return h
 
 

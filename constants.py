@@ -13,7 +13,8 @@ qualificacao_opr = {
     'MRC': 'AL',
     'SBR': instrutor,
     'SOE': aluno,
-    'VLD': instrutor
+    'VLD': instrutor,
+    'MAX': instrutor
 }
 
 max_adaptacao = {

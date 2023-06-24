@@ -26,7 +26,7 @@ esquadrao_database['Tempo total de voo'] = esquadrao_database['Tempo total de vo
 data_pattern = re.compile('[0-9]{2}-[0-9]{2}-[0-9]{4}')
 esquadrao_database['Data - DEP'] = esquadrao_database['Dados - Decolagem'].apply(
     lambda x: re.findall(data_pattern, x)[0])
-esquadrao_database['Data - DEP'] = pd.to_datetime(esquadrao_database['Data - DEP'])
+esquadrao_database['Data - DEP'] = pd.to_datetime(esquadrao_database['Data - DEP'], dayfirst=True)
 esquadrao_database = esquadrao_database.drop(columns='Dados - Decolagem')
 
 horas_voadas = esquadrao_database['Tempo total de voo'].sum()

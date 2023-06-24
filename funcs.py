@@ -7,6 +7,7 @@ import constants
 import numpy as np
 import math
 import altair as alt
+import tripulante as militar
 
 
 @st.cache_data
@@ -392,7 +393,7 @@ def generate_pau_sebo_table(pilots_database):
         x=alt.X('Trigrama:N', sort=alt.EncodingSortField(field='Horas totais', order='descending', op='sum'),
                 axis=alt.Axis(labelAngle=0, labelFontSize=16, title='')),
         y=alt.Y('Horas totais:Q', axis=alt.Axis(title='', labelFontSize=16)),
-        tooltip=['RSP:', 'LSP:'])
+        tooltip=['RSP', 'LSP'])
 
     pau_sebo_chart2 = pau_sebo_chart1.mark_bar(color='red', opacity=0.8).encode(
         y='LSP:Q')
@@ -408,3 +409,11 @@ def generate_pau_sebo_table(pilots_database):
 
     st.altair_chart((pau_sebo_chart3 + pau_sebo_chart1 + pau_sebo_chart2 + pau_sebo_chart4),
                     use_container_width=True)
+
+def trocar_nome_por_trigrama(posto_nome):
+    lista_tripulantes = militar.tripulantes_list
+    first = next(filter(lambda x: x.nome_guerra in posto_nome, lista_tripulantes), None)
+    if first is None:
+        return None
+    else:
+        return first.trigrama

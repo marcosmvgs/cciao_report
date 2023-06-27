@@ -5,7 +5,7 @@ import tabela_indisponibilidade
 import altair as alt
 from functools import reduce
 
-import tripulante
+from models import tripulante
 
 st.set_page_config(layout='wide',
                    page_title='2º/6º GAV - CCIAO - Outs',

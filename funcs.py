@@ -7,7 +7,7 @@ import constants
 import numpy as np
 import math
 import altair as alt
-import tripulante as militar
+from models import tripulante as militar
 
 
 @st.cache_data

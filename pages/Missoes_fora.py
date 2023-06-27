@@ -2,12 +2,14 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 import numpy as np
+import models.tripulante
+import api_gs.teset_api_gs as api_gs
 
 
 def gerar_grafico_missoes_fora_de_sede(data, missao):
     base = alt.Chart(data)
-    chart = base.mark_bar(color='red',
-                          opacity=0.9, ).encode(
+    new_chart = base.mark_bar(color='red',
+                              opacity=0.9, ).encode(
         x=alt.X('Trigrama:N', sort='-y', title='', axis=alt.Axis(labelAngle=0)),
         y=alt.Y(f'sum({missao}):Q', title='Dias fora de sede'),
         color=alt.Color('Status',
@@ -17,7 +19,7 @@ def gerar_grafico_missoes_fora_de_sede(data, missao):
                         )),
         order=alt.Order('Status', sort='ascending')
     )
-    return chart
+    return new_chart
 
 
 st.set_page_config(layout='wide',
@@ -25,15 +27,21 @@ st.set_page_config(layout='wide',
                    page_icon=':airplane')
 
 # Carregando dados brutos
-missoes_fora_sede_rawdata = pd.read_excel('Controle_dias_fora_de_sede.xlsx').filter(
-    items=['Trigrama', 'Missão', 'Ida', 'Volta', 'Status', 'Verificado'])
+missoes_fora_sede_rawdata = api_gs.main()
+
+missoes_fora_sede_rawdata['Ida'] = pd.to_datetime(missoes_fora_sede_rawdata['Ida'], format='%d/%m/%Y')
+missoes_fora_sede_rawdata['Volta'] = pd.to_datetime(missoes_fora_sede_rawdata['Volta'], format='%d/%m/%Y')
 
 missoes_fora_sede_rawdata['Dias fora de sede'] = missoes_fora_sede_rawdata['Volta'] - missoes_fora_sede_rawdata['Ida']
 missoes_fora_sede_rawdata['Dias fora de sede'] = missoes_fora_sede_rawdata['Dias fora de sede'].apply(
-    lambda x: int(x.days))
+    lambda x: int(x.days) + 1)
 
+# Mostrando apenas a data
 missoes_fora_sede_rawdata['Ida'] = missoes_fora_sede_rawdata['Ida'].apply(lambda x: x.date())
 missoes_fora_sede_rawdata['Volta'] = missoes_fora_sede_rawdata['Volta'].apply(lambda x: x.date())
+
+# Carregando todos os trigramas do arquivo Tripulantes
+trigramas = pd.Series(map(lambda x: x.trigrama, models.tripulante.tripulantes_list))
 
 # Organizando os dados em wide-data - cada missão é uma coluna
 pivot_table = pd.pivot_table(data=missoes_fora_sede_rawdata.reset_index(),
@@ -43,52 +51,47 @@ pivot_table = pd.pivot_table(data=missoes_fora_sede_rawdata.reset_index(),
                              columns=['Missão'],
                              fill_value=0).reset_index()
 
-# Conteúdo da apresentação da página
+# Conteúdo de apresentação da página
 st.markdown('### Tabelas e Gráficos de missões fora sede :bar_chart:')
 st.markdown('O objetivo dessa página:')
 st.markdown(
     ' 1. Ser transparente com todos os militares quanto á quantos dias cada militar está ficando fora de sede.\n'
     '2. Facilitar o serviço da escala no momento de escalar um militar para missões fora de sede. ')
 st.markdown(
-    'Todos os dados aqui lançados são baseados na planilha de controle de missões fora de sede da CCIAO. Caso algum militar perceba alguma discrepância,'
-    'deve avisar a CCIAO para que possamos ajustar o mais rápido possível e não trabalharmos com dados errados.')
+    'Todos os dados aqui lançados são baseados na planilha de controle de missões fora de sede da CCIAO. '
+    'Caso algum militar perceba alguma discrepância, '
+    'favor avisar a CCIAO para que possamos ajustar o mais rápido possível e não trabalharmos com dados errados.')
 st.markdown('**A fonte da maior parte das informações é baseada na FACD de cada militar.**')
 
 
 # Dados gerais
 if st.checkbox('Mostrar dados gerais'):
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     with col1:
-        st.multiselect(label='Trigrama', options=missoes_fora_sede_rawdata['Trigrama'].unique())
+        trigramas_selecionados = st.multiselect(label='Trigrama',
+                                                options=missoes_fora_sede_rawdata['Trigrama'].unique())
     with col2:
-        st.multiselect(label='Missão', options=missoes_fora_sede_rawdata['Missão'].unique())
+        missoes_selecionadas = st.multiselect(label='Missão',
+                                              options=missoes_fora_sede_rawdata['Missão'].unique())
     with col3:
-        st.multiselect(label='Status', options=missoes_fora_sede_rawdata['Status'].unique())
-    with col4:
-        st.radio(label='', options=['Verificado', 'Não verificado'], horizontal=True)
+        status_selecionados = st.multiselect(label='Status',
+                                             options=missoes_fora_sede_rawdata['Status'].unique())
 
-    # Dados filtrados
+    # Se não filtrar nada é considerado que todos valores serão mostrados
+    if len(trigramas_selecionados) == 0:
+        trigramas_selecionados = list(missoes_fora_sede_rawdata['Trigrama'].unique())
+    if len(missoes_selecionadas) == 0:
+        missoes_selecionadas = list(missoes_fora_sede_rawdata['Missão'].unique())
+    if len(status_selecionados) == 0:
+        status_selecionados = list(missoes_fora_sede_rawdata['Status'].unique())
+    # Aplicando filtros
+    st.dataframe(missoes_fora_sede_rawdata.query("Trigrama == @trigramas_selecionados & "
+                                                 "Missão == @missoes_selecionadas &"
+                                                 "Status == @status_selecionados"), use_container_width=True)
 
-    st.dataframe(missoes_fora_sede_rawdata, use_container_width=True)
 if st.checkbox('Mostrar dados por missão'):
     st.dataframe(pivot_table, use_container_width=True)
 
-# Gráfico total de dias fora de sede
-base_chart = alt.Chart(missoes_fora_sede_rawdata)
-chart = base_chart.mark_bar(opacity=0.9).encode(
-    x=alt.X('Trigrama:N', sort='-y', axis=alt.Axis(labelAngle=0)),
-    y=alt.Y('sum(Dias fora de sede):Q'),
-    color=alt.Color('Status',
-                    scale=alt.Scale(
-                        domain=['CONCLUÍDO', 'PLANEJADO', 'EM ANDAMENTO'],
-                        range=['#70c1ff', '#cccccc', '#8aeba6']
-                    ))
-    ,
-    order=alt.Order('Status', sort='ascending')
-)
-
-st.markdown('#### Total de dias fora de sede :baggage_claim:')
-st.altair_chart(chart, use_container_width=True)
 
 # Gráficos
 st.markdown('#### Amazônia :deciduous_tree:')
@@ -117,3 +120,19 @@ st.altair_chart(chart_comprep, use_container_width=True)
 st.markdown('#### Simulador :video_game:')
 grafico_simulador = gerar_grafico_missoes_fora_de_sede(data=pivot_table, missao='SIMULADOR')
 st.altair_chart(grafico_simulador, use_container_width=True)
+
+# Gráfico total de dias fora de sede
+base_chart = alt.Chart(missoes_fora_sede_rawdata)
+chart = base_chart.mark_bar(opacity=0.9).encode(
+    x=alt.X('Trigrama:N', sort='-y', axis=alt.Axis(labelAngle=0)),
+    y=alt.Y('sum(Dias fora de sede):Q'),
+    color=alt.Color('Status',
+                    scale=alt.Scale(
+                        domain=['CONCLUÍDO', 'PLANEJADO', 'EM ANDAMENTO'],
+                        range=['#70c1ff', '#cccccc', '#8aeba6']
+                    )),
+    order=alt.Order('Status', sort='ascending')
+)
+
+st.markdown('#### Total de dias fora de sede :baggage_claim:')
+st.altair_chart(chart, use_container_width=True)

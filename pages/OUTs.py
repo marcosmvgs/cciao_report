@@ -34,8 +34,7 @@ filtro_motivo_obs = st.sidebar.multiselect(label='Observação', options=indisp_
 st.markdown('### Tabela e Gráfico de indisponibilidade - Geral')
 st.markdown('Clique no botão abaixo para mostrar os dados. Se necessário, filtre os dados na coluna à esquerda.')
 
-if st.checkbox(label='Mostrar dados', key='tabela_geral'):
-    st.dataframe(indisp_table, use_container_width=True)
+
 
 # Gráfico
 chart_base_indisp_geral = alt.Chart(indisp_table)
@@ -43,11 +42,16 @@ chart1_indisp_geral = chart_base_indisp_geral.mark_bar(opacity=0.8).encode(
     y=alt.X('Trigrama:N', sort='-x', axis=alt.Axis(labelLimit=200)),
     x='count(Trigrama):Q')
 
-st.altair_chart(chart1_indisp_geral, use_container_width=True)
+col1_geral, col2_geral = st.columns(2)
+with col1_geral:
+    st.dataframe(indisp_table, use_container_width=True)
+with col2_geral:
+    st.altair_chart(chart1_indisp_geral, use_container_width=True)
 
 st.markdown('### Tabela e Gráfico Indisponibilidade Mensal')
+
 if st.checkbox(label='Mostrar dados', key='tabela_mensal'):
-    st.dataframe(indisp_mensal_grouped)
+    st.dataframe(indisp_mensal_grouped, use_container_width=True)
 
 # Filtro tripulante
 filtro_trip_mes = st.multiselect(label='Selecione os tripulantes', options=indisp_table['Trigrama'].unique())

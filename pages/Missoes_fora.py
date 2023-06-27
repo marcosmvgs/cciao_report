@@ -27,11 +27,13 @@ st.set_page_config(layout='wide',
 # Carregando dados brutos
 missoes_fora_sede_rawdata = pd.read_excel('Controle_dias_fora_de_sede.xlsx').filter(
     items=['Trigrama', 'Missão', 'Ida', 'Volta', 'Status', 'Verificado'])
+
 missoes_fora_sede_rawdata['Dias fora de sede'] = missoes_fora_sede_rawdata['Volta'] - missoes_fora_sede_rawdata['Ida']
-missoes_fora_sede_rawdata['Ida'] = missoes_fora_sede_rawdata['Ida'].apply(lambda x: x.date())
-missoes_fora_sede_rawdata['Volta'] = missoes_fora_sede_rawdata['Volta'].apply(lambda x: x.date())
 missoes_fora_sede_rawdata['Dias fora de sede'] = missoes_fora_sede_rawdata['Dias fora de sede'].apply(
     lambda x: int(x.days))
+
+missoes_fora_sede_rawdata['Ida'] = missoes_fora_sede_rawdata['Ida'].apply(lambda x: x.date())
+missoes_fora_sede_rawdata['Volta'] = missoes_fora_sede_rawdata['Volta'].apply(lambda x: x.date())
 
 # Organizando os dados em wide-data - cada missão é uma coluna
 pivot_table = pd.pivot_table(data=missoes_fora_sede_rawdata.reset_index(),
@@ -52,6 +54,7 @@ st.markdown(
     'deve avisar a CCIAO para que possamos ajustar o mais rápido possível e não trabalharmos com dados errados.')
 st.markdown('**A fonte da maior parte das informações é baseada na FACD de cada militar.**')
 
+
 # Dados gerais
 if st.checkbox('Mostrar dados gerais'):
     col1, col2, col3, col4 = st.columns(4)
@@ -63,6 +66,9 @@ if st.checkbox('Mostrar dados gerais'):
         st.multiselect(label='Status', options=missoes_fora_sede_rawdata['Status'].unique())
     with col4:
         st.radio(label='', options=['Verificado', 'Não verificado'], horizontal=True)
+
+    # Dados filtrados
+
     st.dataframe(missoes_fora_sede_rawdata, use_container_width=True)
 if st.checkbox('Mostrar dados por missão'):
     st.dataframe(pivot_table, use_container_width=True)

@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 import funcs
 
 
-
 html_source_sagem_indisp = 'tabela_indisponibilidade.html'
 
 with open(html_source_sagem_indisp, 'r', encoding='utf8') as f:
@@ -31,8 +30,6 @@ indisp_raw_dataframe = indisp_raw_dataframe.filter(items=['Tripulante', 'Motivo'
 
 tripulante_list = []
 data_indisp_list = []
-# inicio_data_hora_list = []
-# termino_data_hora_list = []
 motivo_list = []
 motivo_obs_list = []
 
@@ -41,7 +38,14 @@ for i, row in indisp_raw_dataframe.iterrows():
     indisps_text = row[1]
 
     pattern = re.compile(
-        "\d{1,2}-\s+indisponibilidade (?P<texto_periodo>(?P<indisp_total>de (?P<total_inicio>(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/20\d\d (([01][0-9]|2[0-3]):([0-5][0-9]))) a (?P<total_termino>(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/20\d\d (([01][0-9]|2[0-3]):([0-5][0-9]))))|(?P<indisp_parcial>entre ((?P<parcial_hora_inicio>([01][0-9]|2[0-3]):([0-5][0-9])) e (?P<parcial_hora_termino>([01][0-9]|2[0-3]):([0-5][0-9])) no período de (?P<parcial_data_inicio>(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/20\d\d)) a (?P<parcial_data_termino>(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/20\d\d))) por motivo de (?P<motivo>([A-zÃÁ-úÀ-ù]\s*)*(\.|,|))\s*((?P<motivo_obs>\(Obs:\s*[0-9:,\.\(&\#\?\$\*\%A-zÃÁ-úÀ-ù0-9\/\s\.-]*\)*)|)")
+        "\d{1,2}-\s+indisponibilidade (?P<texto_periodo>(?P<indisp_total>de (?P<total_inicio>(0[1-9]|[12][0-9]|3[01])/"
+        "(0[1-9]|1[0-2])/20\d\d (([01][0-9]|2[0-3]):([0-5][0-9]))) a (?P<total_termino>(0[1-9]|[12][0-9]|3[01])/"
+        "(0[1-9]|1[0-2])/20\d\d (([01][0-9]|2[0-3]):([0-5][0-9]))))|(?P<indisp_parcial>entre "
+        "((?P<parcial_hora_inicio>([01][0-9]|2[0-3]):([0-5][0-9])) e (?P<parcial_hora_termino>([01][0-9]|2[0-3]):"
+        "([0-5][0-9])) no período de (?P<parcial_data_inicio>(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/20\d\d))"
+        " a (?P<parcial_data_termino>(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/20\d\d))) por motivo de"
+        " (?P<motivo>([A-zÃÁ-úÀ-ù]\s*)*(\.|,|))\s*"
+        "((?P<motivo_obs>\(Obs:\s*[0-9:,\.\(&\#\?\$\*\%A-zÃÁ-úÀ-ù0-9\/\s\.-]*\)*)|)")
 
     results = re.finditer(pattern, indisps_text)
     for result in results:
@@ -97,6 +101,3 @@ indisp_dataframe = indisp_raw_dataframe[
 
 indisp_dataframe['Tripulante'] = indisp_dataframe['Tripulante'].apply(lambda x: funcs.trocar_nome_por_trigrama(x))
 indisp_dataframe = indisp_dataframe.rename(columns={'Tripulante': 'Trigrama'})
-
-
-

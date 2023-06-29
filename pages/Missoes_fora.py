@@ -3,7 +3,7 @@ import streamlit as st
 import altair as alt
 import numpy as np
 import models.tripulante
-import api_gs.teset_api_gs as api_gs
+import api_gs.api_gs_missoes_fora_sede as api_gs
 
 
 def gerar_grafico_missoes_fora_de_sede(data, missao):

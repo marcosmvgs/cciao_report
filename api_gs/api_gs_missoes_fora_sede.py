@@ -19,8 +19,8 @@ SAMPLE_RANGE_NAME = 'Base de dados!A:F'
 def main():
     creds = None
 
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    if os.path.exists('api_gs/token.json'):
+        creds = Credentials.from_authorized_user_file('api_gs/token.json', SCOPES)
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -30,7 +30,7 @@ def main():
                 r'api_gs/credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
 
-        with open('token.json', 'w') as token:
+        with open('api_gs/token.json', 'w') as token:
             token.write(creds.to_json())
 
     try:

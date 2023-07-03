@@ -108,7 +108,8 @@ st.markdown(
     'Caso algum militar perceba alguma discrepância, '
     'favor avisar a CCIAO para que possamos ajustar o mais rápido possível e não trabalharmos com dados errados.')
 st.markdown('**A fonte da maior parte das informações é baseada na FACD de cada militar.**')
-
+st.markdown('***Dê preferência para visualizar os gráficos em uma tela de computador ao invés de celular. Devido ao'
+            'tamanho da tela do celular pode ser que alguns dados sejam omitidos.***')
 # Dados gerais
 if st.checkbox('Mostrar dados gerais'):
     col1, col2, col3 = st.columns(3)
@@ -142,17 +143,18 @@ st.markdown('#### Amazônia :deciduous_tree:')
 grafico_amazonia = gerar_grafico_missoes_fora_de_sede(data=pivot_table, missao='OPERAÇÃO YANOMAMI/AMAZÔNIA')
 st.altair_chart(grafico_amazonia, use_container_width=True)
 
-st.markdown('#### Missões COMPREP')
+st.markdown('#### Missões COMPREP ICA 55-87 + Simulador')
 
 initial_data = api_gs.main()
-comprep_table = carregar_dados_para_graficos(initial_data.loc[(initial_data['Missão'] == 'TÁPIO') |
-                                                              (initial_data['Missão'] == 'TÍNIA') |
-                                                              (initial_data['Missão'] == 'IVR') |
-                                                              (initial_data['Missão'] == 'Sem missão alocada')])
+demais_missoes_table = carregar_dados_para_graficos(initial_data.loc[(initial_data['Missão'] == 'TÁPIO') |
+                                                                     (initial_data['Missão'] == 'TÍNIA') |
+                                                                     (initial_data['Missão'] == 'IVR') |
+                                                                     (initial_data['Missão'] == 'SIMULADOR') |
+                                                                     (initial_data['Missão'] == 'Sem missão alocada')])
 
-base_comprep = alt.Chart(comprep_table)
+base_comprep = alt.Chart(demais_missoes_table)
 chart_comprep = base_comprep.mark_bar(opacity=0.9).encode(
-    x=alt.X('Trigrama:N', sort='-y', axis=alt.Axis(labelAngle=0)),
+    x=alt.X('Trigrama:N', sort='-y', axis=alt.Axis(labelAngle=0), title=''),
     y=alt.Y('sum(Dias fora de sede):Q'),
     color=alt.Color('Status',
                     scale=alt.Scale(
@@ -165,14 +167,33 @@ chart_comprep = base_comprep.mark_bar(opacity=0.9).encode(
 
 st.altair_chart(chart_comprep, use_container_width=True)
 
-st.markdown('#### Simulador :video_game:')
-grafico_simulador = gerar_grafico_missoes_fora_de_sede(data=pivot_table, missao='SIMULADOR')
-st.altair_chart(grafico_simulador, use_container_width=True)
+st.markdown('#### Demais missões')
+demais_missoes_table = carregar_dados_para_graficos(
+    initial_data.loc[(initial_data['Missão'] != 'TÁPIO') &
+                     (initial_data['Missão'] != 'OPERAÇÃO YANOMAMI/AMAZÔNIA') &
+                     (initial_data['Missão'] != 'TÍNIA') &
+                     (initial_data['Missão'] != 'IVR') &
+                     (initial_data['Missão'] != 'SIMULADOR') &
+                     (initial_data['Missão'] != 'Sem missão alocada')])
+
+demais_missoes_chart = alt.Chart(demais_missoes_table).mark_bar(opacity=0.9).encode(
+    x=alt.X('Trigrama:N', sort='-y', axis=alt.Axis(labelAngle=0), title=''),
+    y=alt.Y('sum(Dias fora de sede):Q'),
+    color=alt.Color('Status',
+                    scale=alt.Scale(
+                        domain=['CONCLUÍDO', 'PLANEJADO', 'EM ANDAMENTO'],
+                        range=['#70c1ff', '#cccccc', '#8aeba6']
+                    )
+                    ),
+    order=alt.Order('Status', sort='ascending')
+)
+
+st.altair_chart(demais_missoes_chart, use_container_width=True)
 
 # Gráfico total de dias fora de sede
 base_chart = alt.Chart(missoes_fora_sede_graficos)
 chart = base_chart.mark_bar(opacity=0.9).encode(
-    x=alt.X('Trigrama:N', sort='-y', axis=alt.Axis(labelAngle=0)),
+    x=alt.X('Trigrama:N', sort='-y', axis=alt.Axis(labelAngle=0), title=''),
     y=alt.Y('sum(Dias fora de sede):Q'),
     color=alt.Color('Status',
                     scale=alt.Scale(

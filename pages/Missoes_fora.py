@@ -190,7 +190,7 @@ demais_missoes_chart = alt.Chart(demais_missoes_table).mark_bar(opacity=0.9).enc
 
 st.altair_chart(demais_missoes_chart, use_container_width=True)
 
-# Gráfico total de dias fora de sede
+# Gráfico total de dias fora de sede -
 base_chart = alt.Chart(missoes_fora_sede_graficos)
 chart = base_chart.mark_bar(opacity=0.9).encode(
     x=alt.X('Trigrama:N', sort='-y', axis=alt.Axis(labelAngle=0), title=''),

@@ -16,7 +16,7 @@ def gerar_grafico_missoes_fora_de_sede(data, missao):
                         scale=alt.Scale(
                             domain=['CONCLUÍDO', 'PLANEJADO', 'EM ANDAMENTO'],
                             range=['#70c1ff', '#cccccc', '#8aeba6']
-                        )),
+                        ), legend=alt.Legend(orient='top')),
         order=alt.Order('Status', sort='ascending')
     )
     return new_chart
@@ -24,7 +24,8 @@ def gerar_grafico_missoes_fora_de_sede(data, missao):
 
 st.set_page_config(layout='wide',
                    page_title='2º/6º GAV - CCIAO - Outs',
-                   page_icon=':airplane')
+                   page_icon=':airplane',
+                   initial_sidebar_state='collapsed')
 
 
 def carregar_dados_para_graficos(gs_data):
@@ -109,7 +110,9 @@ st.markdown(
     'favor avisar a CCIAO para que possamos ajustar o mais rápido possível e não trabalharmos com dados errados.')
 st.markdown('**A fonte da maior parte das informações é baseada na FACD de cada militar.**')
 st.markdown('***Dê preferência para visualizar os gráficos em uma tela de computador ao invés de celular. Devido ao'
-            'tamanho da tela do celular pode ser que alguns dados sejam omitidos.***')
+            'tamanho da tela do celular pode ser que alguns dados sejam omitidos, se mesmo assim estiver '
+            ' visualizando no celular, habilite o modo Desktop nas opções do seu navegador e coloque o celular'
+            ' na posição horizontal..***')
 # Dados gerais
 if st.checkbox('Mostrar dados gerais'):
     col1, col2, col3 = st.columns(3)
@@ -160,7 +163,7 @@ chart_comprep = base_comprep.mark_bar(opacity=0.9).encode(
                     scale=alt.Scale(
                         domain=['CONCLUÍDO', 'PLANEJADO', 'EM ANDAMENTO'],
                         range=['#70c1ff', '#cccccc', '#8aeba6']
-                    )
+                    ), legend=alt.Legend(orient='top')
                     ),
     order=alt.Order('Status', sort='ascending')
 )
@@ -184,9 +187,8 @@ demais_missoes_chart = alt.Chart(demais_missoes_table).mark_bar(opacity=0.9).enc
                         domain=['CONCLUÍDO', 'PLANEJADO', 'EM ANDAMENTO'],
                         range=['#70c1ff', '#cccccc', '#8aeba6']
                     )
-                    ),
-    order=alt.Order('Status', sort='ascending')
-)
+                    , legend=alt.Legend(orient='top')),
+    order=alt.Order('Status', sort='ascending'))
 
 st.altair_chart(demais_missoes_chart, use_container_width=True)
 
@@ -199,7 +201,7 @@ chart = base_chart.mark_bar(opacity=0.9).encode(
                     scale=alt.Scale(
                         domain=['CONCLUÍDO', 'PLANEJADO', 'EM ANDAMENTO'],
                         range=['#70c1ff', '#cccccc', '#8aeba6']
-                    )),
+                    ), legend=alt.Legend(orient='top')),
     order=alt.Order('Status', sort='ascending')
 )
 

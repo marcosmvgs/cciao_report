@@ -7,24 +7,19 @@ from controle_main import conn
 
 
 def gerar_grafico_missoes_fora_de_sede(data, missao):
-    # base = alt.Chart(data)
-    # new_chart = base.mark_bar(color='red',
-    #                           opacity=0.9, ).encode(
-    #     x=alt.X('Trigrama:N', sort='-y', title='', axis=alt.Axis(labelAngle=0)),
-    #     y=alt.Y(f'sum({missao}):Q', title='Dias fora de sede'),
-    #     color=alt.Color('Status',
-    #                     scale=alt.Scale(
-    #                         domain=['CONCLUÍDO', 'PLANEJADO', 'EM ANDAMENTO'],
-    #                         range=['#70c1ff', '#cccccc', '#8aeba6']
-    #                     ), legend=alt.Legend(orient='top')),
-    #     order=alt.Order('Status', sort='ascending')
-    # )
-
     base = alt.Chart(data)
-    new_chart = base.mark_bar().encode(
-        x='Trigrama:N',
-        y=f'sum({missao}):Q'
+    new_chart = base.mark_bar(color='red',
+                              opacity=0.9, ).encode(
+        x=alt.X('Trigrama:N', sort='-y', title='', axis=alt.Axis(labelAngle=0)),
+        y=alt.Y(f'sum({missao}):Q', title='Dias fora de sede'),
+        color=alt.Color('Status',
+                        scale=alt.Scale(
+                            domain=['CONCLUÍDO', 'PLANEJADO', 'EM ANDAMENTO'],
+                            range=['#70c1ff', '#cccccc', '#8aeba6']
+                        ), legend=alt.Legend(orient='top')),
+        order=alt.Order('Status', sort='ascending')
     )
+
     return new_chart
 
 
@@ -156,8 +151,8 @@ if st.checkbox('Mostrar dados por missão'):
 # Gráficos
 st.markdown('#### Amazônia :deciduous_tree:')
 grafico_amazonia = gerar_grafico_missoes_fora_de_sede(data=pivot_table, missao='OPERAÇÃO YANOMAMI/AMAZÔNIA')
-st.altair_chart(grafico_amazonia, use_container_width=True)
-
+#st.altair_chart(grafico_amazonia, use_container_width=True)
+grafico_amazonia.save('teste_chart.json')
 st.markdown('#### Missões COMPREP ICA 55-87 + Simulador')
 
 initial_data = tabela

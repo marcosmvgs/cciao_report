@@ -5,6 +5,7 @@ import numpy as np
 import models.tripulante as tripulantes
 from google_sheets_connection import missoes_fora_sede
 
+
 def gerar_grafico_missoes_fora_de_sede(data, missao):
     base = alt.Chart(data)
     new_chart = base.mark_bar(color='red',

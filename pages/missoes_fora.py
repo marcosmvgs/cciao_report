@@ -3,7 +3,7 @@ import streamlit as st
 import altair as alt
 import numpy as np
 import models.tripulante as tripulantes
-from api_gs.api_gs_missoes_fora_sede import GoogleSheetsApi
+from google_sheets_connection import missoes_fora_sede
 
 def gerar_grafico_missoes_fora_de_sede(data, missao):
     base = alt.Chart(data)
@@ -80,20 +80,7 @@ def carregar_dados_para_tabelas(gs_data):
     return gs_data
 
 
-
-def connect_to_gs_api():
-    scope = ['https://www.googleapis.com/auth/spreadsheets.readonly']
-    spreadsheet_id = '1XRphnMCmqEzjdN5TTihmGWDQSQg_SgL81yxCEYz-dBk'
-
-    conn = GoogleSheetsApi(scopes=scope,
-                           spread_sheet_id=spreadsheet_id)
-
-    return conn
-
-
-connection = connect_to_gs_api()
-nome_tabela = 'Dias Fora de sede!A:F'
-tabela = connection.get_sheet(nome_tabela)
+tabela = missoes_fora_sede
 missoes_fora_sede_graficos = carregar_dados_para_graficos(tabela)
 missoes_fora_sede_tabelas = carregar_dados_para_tabelas(tabela)
 
@@ -155,8 +142,7 @@ if st.checkbox('Mostrar dados por missão'):
 # Gráficos
 st.markdown('#### Amazônia :deciduous_tree:')
 grafico_amazonia = gerar_grafico_missoes_fora_de_sede(data=pivot_table, missao='OPERAÇÃO YANOMAMI/AMAZÔNIA')
-#st.altair_chart(grafico_amazonia, use_container_width=True)
-grafico_amazonia.save('teste_chart.json')
+st.altair_chart(grafico_amazonia, use_container_width=True)
 st.markdown('#### Missões COMPREP ICA 55-87 + Simulador')
 
 initial_data = tabela

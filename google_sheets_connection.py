@@ -18,18 +18,18 @@ class GoogleSheetsApi:
         self.creds = None
         self.spreadsheet = None
 
-        if os.path.exists('api_gs/token.json'):
-            self.creds = Credentials.from_authorized_user_file('api_gs/token.json', scopes)
+        if os.path.exists('token.json'):
+            self.creds = Credentials.from_authorized_user_file('token.json', scopes)
 
         if not self.creds or not self.creds.valid:
             if self.creds and self.creds.expired and self.creds.refresh_token:
                 self.creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    r'api_gs/credentials.json', scopes
+                    r'credentials.json', scopes
                 )
                 self.creds = flow.run_local_server(port=0)
-            with open('api_gs/token.json', 'w') as token:
+            with open('token.json', 'w') as token:
                 token.write(self.creds.to_json())
         try:
             service = build('sheets', 'v4', credentials=self.creds)
@@ -44,3 +44,13 @@ class GoogleSheetsApi:
         values = result.get('values', [])
         data = pd.DataFrame(columns=values[0], data=values[1:])
         return data
+
+
+scope = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+spreadsheet_id = '1XRphnMCmqEzjdN5TTihmGWDQSQg_SgL81yxCEYz-dBk'
+
+connection = GoogleSheetsApi(scopes=scope,
+                             spread_sheet_id=spreadsheet_id)
+
+missoes_fora_sede = connection.get_sheet('Dias fora de sede!A:F')
+

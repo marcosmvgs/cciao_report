@@ -141,8 +141,8 @@ if st.checkbox('Mostrar dados por missão'):
 
 # Gráficos
 st.markdown('#### Amazônia :deciduous_tree:')
-grafico_amazonia = gerar_grafico_missoes_fora_de_sede(data=pivot_table, missao='OPERAÇÃO YANOMAMI/AMAZÔNIA')
-st.altair_chart(grafico_amazonia, use_container_width=True)
+#grafico_amazonia = gerar_grafico_missoes_fora_de_sede(data=pivot_table, missao='OPERAÇÃO YANOMAMI/AMAZÔNIA')
+#st.altair_chart(grafico_amazonia, use_container_width=True)
 
 st.markdown('#### Missões COMPREP ICA 55-87 + Simulador')
 

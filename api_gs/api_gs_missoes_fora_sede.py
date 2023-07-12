@@ -8,43 +8,39 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 
-# If modifying these scopes, delete the file token.json.
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+class GoogleSheetsApi:
+    def __init__(self,
+                 scopes,
+                 spread_sheet_id):
 
+        self.scopes = scopes
+        self.spread_sheet_id = spread_sheet_id
+        self.creds = None
+        self.spreadsheet = None
 
-SAMPLE_SPREADSHEET_ID = '1XRphnMCmqEzjdN5TTihmGWDQSQg_SgL81yxCEYz-dBk'
-SAMPLE_RANGE_NAME = 'Base de dados!A:F'
+        if os.path.exists('api_gs/token.json'):
+            self.creds = Credentials.from_authorized_user_file('api_gs/token.json', scopes)
 
+        if not self.creds or not self.creds.valid:
+            if self.creds and self.creds.expired and self.creds.refresh_token:
+                self.creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    r'api_gs/credentials.json', scopes
+                )
+                self.creds = flow.run_local_server(port=0)
+            with open('api_gs/token.json', 'w') as token:
+                token.write(self.creds.to_json())
+        try:
+            service = build('sheets', 'v4', credentials=self.creds)
+            self.spreadsheet = service.spreadsheets()
+        except HttpError as err:
+            print(err)
+            self.spreadsheet = None
 
-def main():
-    creds = None
-
-    if os.path.exists('api_gs/token.json'):
-        creds = Credentials.from_authorized_user_file('api_gs/token.json', SCOPES)
-
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                r'api_gs/credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-
-        with open('api_gs/token.json', 'w') as token:
-            token.write(creds.to_json())
-
-    try:
-        service = build('sheets', 'v4', credentials=creds)
-
-        sheet = service.spreadsheets()
-        result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                                    range=SAMPLE_RANGE_NAME).execute()
+    def get_sheet(self, sheet_name):
+        result = self.spreadsheet.values().get(spreadsheetId=self.spread_sheet_id,
+                                               range=sheet_name).execute()
         values = result.get('values', [])
-        df = pd.DataFrame(columns=values[0], data=values[1:])
-        if not values:
-            print('No data found.')
-            return
-    except HttpError as err:
-        print(err)
-        df = None
-    return df
+        data = pd.DataFrame(columns=values[0], data=values[1:])
+        return data

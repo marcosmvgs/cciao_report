@@ -1,28 +1,42 @@
 import datetime
 import re
 import altair as alt
-import altair
 import pandas as pd
 import streamlit as st
 import constants
 import funcs
+from api_gs.api_gs_missoes_fora_sede import GoogleSheetsApi
+
+
+def connect_to_gs_api():
+    scope = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+    spreadsheet_id = '1XRphnMCmqEzjdN5TTihmGWDQSQg_SgL81yxCEYz-dBk'
+
+    conn = GoogleSheetsApi(scopes=scope,
+                           spread_sheet_id=spreadsheet_id)
+
+    return conn
+
 
 st.set_page_config(layout='wide',
                    page_title='2º/6º GAV - CCIAO',
                    page_icon=':airplane')
 
-# Carregando tabelas
-raw_database = funcs.load_data()
-pilots_database = funcs.generate_pilots_data(raw_database)
 
-esquadrao_database = raw_database.filter(items=['Matrícula da aeronave',
-                                                'Tipo de Registro',
-                                                'Tempo total de voo',
-                                                'Esforço Aéreo',
-                                                'Consumo Combustível (kg)',
-                                                'Dados - Decolagem'])
+conn = connect_to_gs_api()
+registro_voo_raw_database = conn.get_sheet('Registro de Voo!A:W')
+pilots_database = funcs.generate_pilots_data(registro_voo_raw_database)
 
-esquadrao_database['Tempo total de voo'] = esquadrao_database['Tempo total de voo'].apply(lambda x: funcs.make_delta(x))
+esquadrao_database = registro_voo_raw_database.filter(items=['Matrícula da aeronave',
+                                                             'Tipo de Registro',
+                                                             'Tempo total de voo',
+                                                             'Esforço Aéreo',
+                                                             'Consumo Combustível (kg)',
+                                                             'Dados - Decolagem'])
+
+esquadrao_database['Tempo total de voo'] = esquadrao_database['Tempo total de voo'].\
+    apply(lambda x: funcs.formarted_time_to_hourstime(x))
+
 data_pattern = re.compile('[0-9]{2}-[0-9]{2}-[0-9]{4}')
 esquadrao_database['Data - DEP'] = esquadrao_database['Dados - Decolagem'].apply(
     lambda x: re.findall(data_pattern, x)[0])
@@ -60,40 +74,37 @@ with col4:
     kpi_perc_voado_E99 = st.metric(label='Percentual voado_E99', value=f'{perc_voado_e99}%')
     kpi_perc_voado_R99 = st.metric(label='Percentual voado_R99', value=f'{perc_voado_r99}%')
 
-esquadrao_agrupado = esquadrao_database.groupby(
-    [pd.Grouper(key='Data - DEP', freq='M'), 'Matrícula da aeronave']).aggregate({'Tempo total de voo': 'sum'})
-esquadrao_agrupado2 = esquadrao_database.groupby(pd.Grouper(key='Data - DEP', freq='M')).aggregate(
-    {'Tempo total de voo': 'sum'})
-esquadrao_agrupado = esquadrao_agrupado.reset_index()
-esquadrao_chart_base = altair.Chart(esquadrao_agrupado)
+
 esquadrao_database_text = esquadrao_database.groupby(pd.Grouper(key='Data - DEP', freq='M')).aggregate(
-    {'Tempo total de voo': 'sum'})
-esquadrao_database_text.reset_index(inplace=True)
+    {'Tempo total de voo': 'sum'}).reset_index()
+st.write(esquadrao_database_text)
+st.write(esquadrao_database)
+st.write(funcs.formartar_tempo(esquadrao_database['Tempo total de voo'].sum()))
 esquadrao_database_text['Horas voadas'] = esquadrao_database_text['Tempo total de voo'].apply(
     lambda x: funcs.formartar_tempo(x))
+
 base_text_chart = alt.Chart(esquadrao_database_text)
 
-esquadrao_chart1 = esquadrao_chart_base.mark_area(line={'color': 'grey',
-                                                        'opacity': 0.3},
-                                                  opacity=0.5,
-                                                  point={'color': 'black',
-                                                         'size': 90},
-                                                  color=alt.Gradient(
-                                                      gradient='linear',
-                                                      stops=[alt.GradientStop(color='white', offset=0),
-                                                             alt.GradientStop(color='grey', offset=1)],
-                                                      x1=1,
-                                                      x2=1,
-                                                      y1=1,
-                                                      y2=0)).encode(
+esquadrao_chart1 = alt.Chart(esquadrao_database).mark_area(line={'color': 'grey',
+                                                                 'opacity': 0.3},
+                                                           opacity=0.5,
+                                                           point={'color': 'black',
+                                                                  'size': 90},
+                                                           color=alt.Gradient(
+                                                               gradient='linear',
+                                                               stops=[alt.GradientStop(color='white', offset=0),
+                                                                      alt.GradientStop(color='grey', offset=1)],
+                                                               x1=1,
+                                                               x2=1,
+                                                               y1=1,
+                                                               y2=0)).encode(
     x=alt.X('Data - DEP:T', timeUnit='month', title=''),
     y='sum(Tempo total de voo)',
-    tooltip=['Data - DEP', 'sum(Tempo total de voo)']
-)
+    tooltip=['sum(Tempo total de voo)'])
 
-esquadrao_chart2 = esquadrao_chart_base.mark_line().encode(
+esquadrao_chart2 = alt.Chart(esquadrao_database).mark_line().encode(
     x=alt.X('Data - DEP:T', timeUnit='month', title=''),
-    y=alt.Y('Tempo total de voo:Q', axis=alt.Axis(title='')),
+    y=alt.Y('sum(Tempo total de voo)', axis=alt.Axis(title='')),
     color=alt.Color('Matrícula da aeronave:N', legend=alt.Legend(orient='top')),
 )
 

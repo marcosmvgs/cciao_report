@@ -345,7 +345,7 @@ def organizar_barras(row):
         return row['Dias sem voar'] + (3 * 365 + 1)
 
 
-def make_delta(time):
+def formarted_time_to_hourstime(time):
     if not isinstance(time, str):
         string_time = time.strftime("%H:%M:%S")
     else:
@@ -378,7 +378,7 @@ def generate_pau_sebo_table(pilots_database):
         items=['Trigrama', 'Tempo total de voo', 'Posição']
     )
 
-    pau_sebo['Horas totais'] = pau_sebo['Tempo total de voo'].apply(lambda x: make_delta(x))
+    pau_sebo['Horas totais'] = pau_sebo['Tempo total de voo'].apply(lambda x: formarted_time_to_hourstime(x))
     pau_sebo = pau_sebo.groupby(['Trigrama', 'Posição']).aggregate({'Horas totais':'sum'})
     pau_sebo_agrupado = pau_sebo.pivot_table(values='Horas totais', index='Trigrama', columns='Posição').reset_index()
     pau_sebo_agrupado = pau_sebo_agrupado.fillna(0)

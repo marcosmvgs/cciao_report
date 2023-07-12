@@ -2,8 +2,8 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 import numpy as np
-import api_gs.api_gs_missoes_fora_sede as api_gs
 import models.tripulante as tripulantes
+from controle_main import conn
 
 
 def gerar_grafico_missoes_fora_de_sede(data, missao):
@@ -28,6 +28,7 @@ st.set_page_config(layout='wide',
                    initial_sidebar_state='collapsed')
 
 
+@st.cache_data
 def carregar_dados_para_graficos(gs_data):
     gs_data['Ida'] = pd.to_datetime(gs_data['Ida'], format='%d/%m/%Y')
     gs_data['Volta'] = pd.to_datetime(gs_data['Volta'], format='%d/%m/%Y')
@@ -72,6 +73,7 @@ def carregar_dados_para_graficos(gs_data):
     return table
 
 
+@st.cache_data
 def carregar_dados_para_tabelas(gs_data):
     gs_data['Ida'] = pd.to_datetime(gs_data['Ida'], format='%d/%m/%Y')
     gs_data['Volta'] = pd.to_datetime(gs_data['Volta'], format='%d/%m/%Y')
@@ -83,8 +85,10 @@ def carregar_dados_para_tabelas(gs_data):
     return gs_data
 
 
-missoes_fora_sede_graficos = carregar_dados_para_graficos(api_gs.main())
-missoes_fora_sede_tabelas = carregar_dados_para_tabelas(gs_data=api_gs.main())
+nome_tabela = 'Dias Fora de sede!A:F'
+tabela = conn.get_sheet(nome_tabela)
+missoes_fora_sede_graficos = carregar_dados_para_graficos(tabela)
+missoes_fora_sede_tabelas = carregar_dados_para_tabelas(tabela)
 
 # Mostrando apenas a data
 missoes_fora_sede_tabelas['Ida'] = missoes_fora_sede_tabelas['Ida'].apply(lambda x: x.date(), )
@@ -148,7 +152,7 @@ st.altair_chart(grafico_amazonia, use_container_width=True)
 
 st.markdown('#### Missões COMPREP ICA 55-87 + Simulador')
 
-initial_data = api_gs.main()
+initial_data = tabela
 demais_missoes_table = carregar_dados_para_graficos(initial_data.loc[(initial_data['Missão'] == 'TÁPIO') |
                                                                      (initial_data['Missão'] == 'TÍNIA') |
                                                                      (initial_data['Missão'] == 'IVR') |
@@ -186,8 +190,8 @@ demais_missoes_chart = alt.Chart(demais_missoes_table).mark_bar(opacity=0.9).enc
                     scale=alt.Scale(
                         domain=['CONCLUÍDO', 'PLANEJADO', 'EM ANDAMENTO'],
                         range=['#70c1ff', '#cccccc', '#8aeba6']
-                    )
-                    , legend=alt.Legend(orient='top')),
+                    ),
+                    legend=alt.Legend(orient='top')),
     order=alt.Order('Status', sort='ascending'))
 
 st.altair_chart(demais_missoes_chart, use_container_width=True)

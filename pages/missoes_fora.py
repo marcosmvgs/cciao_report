@@ -7,17 +7,23 @@ from controle_main import conn
 
 
 def gerar_grafico_missoes_fora_de_sede(data, missao):
+    # base = alt.Chart(data)
+    # new_chart = base.mark_bar(color='red',
+    #                           opacity=0.9, ).encode(
+    #     x=alt.X('Trigrama:N', sort='-y', title='', axis=alt.Axis(labelAngle=0)),
+    #     y=alt.Y(f'sum({missao}):Q', title='Dias fora de sede'),
+    #     color=alt.Color('Status',
+    #                     scale=alt.Scale(
+    #                         domain=['CONCLUÍDO', 'PLANEJADO', 'EM ANDAMENTO'],
+    #                         range=['#70c1ff', '#cccccc', '#8aeba6']
+    #                     ), legend=alt.Legend(orient='top')),
+    #     order=alt.Order('Status', sort='ascending')
+    # )
+
     base = alt.Chart(data)
-    new_chart = base.mark_bar(color='red',
-                              opacity=0.9, ).encode(
-        x=alt.X('Trigrama:N', sort='-y', title='', axis=alt.Axis(labelAngle=0)),
-        y=alt.Y(f'sum({missao}):Q', title='Dias fora de sede'),
-        color=alt.Color('Status',
-                        scale=alt.Scale(
-                            domain=['CONCLUÍDO', 'PLANEJADO', 'EM ANDAMENTO'],
-                            range=['#70c1ff', '#cccccc', '#8aeba6']
-                        ), legend=alt.Legend(orient='top')),
-        order=alt.Order('Status', sort='ascending')
+    new_chart = base.mark_bar().encode(
+        x='Trigrama:N',
+        y=f'sum({missao}):Q'
     )
     return new_chart
 
@@ -28,7 +34,6 @@ CHART = alt.Chart(data).mark_bar().encode(
     x='nomes',
     y='valores:Q'
 )
-st.altair_chart(CHART)
 
 
 @st.cache_data

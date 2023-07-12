@@ -6,6 +6,7 @@ import streamlit as st
 import constants
 import funcs
 from api_gs.api_gs_missoes_fora_sede import GoogleSheetsApi
+from pages import missoes_fora
 
 
 def connect_to_gs_api():

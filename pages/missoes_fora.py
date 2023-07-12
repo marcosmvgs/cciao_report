@@ -8,8 +8,8 @@ from controle_main import conn
 
 def gerar_grafico_missoes_fora_de_sede(data, missao):
     base = alt.Chart(data)
-    new_chart = base.mark_bar(color='red',
-                              opacity=0.9, ).encode(
+    new_chart = base.mark_bar(
+        opacity=0.9).encode(
         x=alt.X('Trigrama:N', sort='-y', title='', axis=alt.Axis(labelAngle=0)),
         y=alt.Y(f'sum({missao}):Q', title='Dias fora de sede'),
         color=alt.Color('Status',
@@ -20,7 +20,6 @@ def gerar_grafico_missoes_fora_de_sede(data, missao):
         order=alt.Order('Status', sort='ascending')
     )
     return new_chart
-
 
 
 @st.cache_data

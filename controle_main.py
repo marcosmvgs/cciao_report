@@ -18,6 +18,8 @@ def connect_to_gs_api():
     return conn
 
 
+
+
 st.set_page_config(layout='wide',
                    page_title='2º/6º GAV - CCIAO',
                    page_icon=':airplane')

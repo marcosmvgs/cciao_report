@@ -3,8 +3,7 @@ import streamlit as st
 import altair as alt
 import numpy as np
 import models.tripulante as tripulantes
-from controle_main import conn
-
+from api_gs.api_gs_missoes_fora_sede import GoogleSheetsApi
 
 def gerar_grafico_missoes_fora_de_sede(data, missao):
     base = alt.Chart(data)
@@ -22,13 +21,6 @@ def gerar_grafico_missoes_fora_de_sede(data, missao):
 
     return new_chart
 
-
-data = pd.DataFrame({'nomes': ['marcos', 'vitoria', 'marcia'],
-                     'valores': [1, 2, 3]})
-CHART = alt.Chart(data).mark_bar().encode(
-    x='nomes',
-    y='valores:Q'
-)
 
 
 @st.cache_data
@@ -88,8 +80,20 @@ def carregar_dados_para_tabelas(gs_data):
     return gs_data
 
 
+
+def connect_to_gs_api():
+    scope = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+    spreadsheet_id = '1XRphnMCmqEzjdN5TTihmGWDQSQg_SgL81yxCEYz-dBk'
+
+    conn = GoogleSheetsApi(scopes=scope,
+                           spread_sheet_id=spreadsheet_id)
+
+    return conn
+
+
+connection = connect_to_gs_api()
 nome_tabela = 'Dias Fora de sede!A:F'
-tabela = conn.get_sheet(nome_tabela)
+tabela = connection.get_sheet(nome_tabela)
 missoes_fora_sede_graficos = carregar_dados_para_graficos(tabela)
 missoes_fora_sede_tabelas = carregar_dados_para_tabelas(tabela)
 

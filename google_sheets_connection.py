@@ -53,3 +53,4 @@ connection = GoogleSheetsApi(scopes=scope,
                              spread_sheet_id=spreadsheet_id)
 
 missoes_fora_sede = connection.get_sheet('Dias fora de sede!A:F')
+registro_de_voo = connection.get_sheet('Registro de Voo - CCIAO!A:W')

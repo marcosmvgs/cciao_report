@@ -86,6 +86,7 @@ st.set_page_config(page_icon=':airplane:',
                    layout='wide',
                    initial_sidebar_state='collapsed')
 
+
 tabela = missoes_fora_sede
 missoes_fora_sede_graficos = carregar_dados_para_graficos(tabela)
 missoes_fora_sede_tabelas = carregar_dados_para_tabelas(tabela)

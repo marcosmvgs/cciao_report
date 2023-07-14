@@ -20,28 +20,6 @@ def load_data():
 
 @st.cache_data
 def generate_pilots_data(raw_database):
-    mid_database = raw_database.filter(items=['Dados dos Tripulantes',
-                                              'Tempo total de voo',
-                                              'Tempo IFR',
-                                              'Tempo Noturno',
-                                              'Tráfegos Visuais',
-                                              'Flaps 22',
-                                              'IFR sem AP',
-                                              'Descidas',
-                                              'Dados - Decolagem',
-                                              'Dados - Pouso',
-                                              'Submission ID',
-                                              'Matrícula da aeronave',
-                                              'Tipo de Registro',
-                                              'Esforço Aéreo',
-                                              'Arremetidas no Ar',
-                                              'Motivo da abortiva em Voo',
-                                              'Motivo da abortiva no solo',
-                                              'Observações',
-                                              'Numero de Pousos',
-                                              'Submission Date',
-                                              'Edit Link'])
-
     submission_date_list = []
     submission_id_list = []
     matricula_anv_list = []
@@ -73,7 +51,7 @@ def generate_pilots_data(raw_database):
     obs_list = []
     edit_link_list = []
 
-    for i, row in mid_database.iterrows():
+    for i, row in raw_database.iterrows():
         trips = row[0].split('\n')[0:-1]
         tev = row[1]
         tev_ifr = row[2]
@@ -201,9 +179,9 @@ def filter_dataframe(df: pd.DataFrame):
     for column in to_filter_columns:
         if is_datetime64_dtype(df[column]):
             user_date_input = st.date_input(f'Ddatas para {column}',
-                                                    value=(df[column].min(),
-                                                           df[column].max()
-                                                           ))
+                                            value=(df[column].min(),
+                                                   df[column].max()
+                                                   ))
             if len(user_date_input) == 2:
                 user_date_input = tuple(map(pd.to_datetime, user_date_input))
                 start_date, end_date = user_date_input
@@ -211,9 +189,9 @@ def filter_dataframe(df: pd.DataFrame):
         elif is_integer_dtype(df[column]):
             st.write('acha que é inteiro')
             user_number_input = st.slider(f'Número {column}',
-                                                  min_value=0,
-                                                  max_value=20,
-                                                  value=[int(df[column].min()), int(df[column].max())])
+                                          min_value=0,
+                                          max_value=20,
+                                          value=[int(df[column].min()), int(df[column].max())])
             if user_number_input:
                 number_min, number_max = user_number_input
                 df = df[df[column].between(number_min, number_max)]
@@ -272,7 +250,6 @@ def generate_cesta_basica_table(data):
     temp_df['Não Precisão'] = temp_df['Descida - Tipo'].apply(lambda x: count_tipo_proc(x)['NP'])
     temp_df['Noturno'] = temp_df['Tempo Noturno'].apply(lambda x: 1 if x != datetime.time(0, 0, 0) else 0)
     temp_df = temp_df.drop(['Descida - Tipo', 'Tempo Noturno'], axis=1)
-
 
     cesta_basica_df = temp_df.groupby('Trigrama').aggregate({'Flaps 22': 'sum',
                                                              'Arremetida no Ar': 'sum',
@@ -345,24 +322,25 @@ def organizar_barras(row):
         return row['Dias sem voar'] + (3 * 365 + 1)
 
 
-def formarted_time_to_hourstime(time):
+def transform_formattedtime_to_minutes(time):
     if not isinstance(time, str):
         string_time = time.strftime("%H:%M:%S")
     else:
         string_time = time
     try:
         h, m, s = string_time.split(':')
-        m = int(m) / 60
-        s = int(s) / 3600
-        h = int(h) + m + s
+        m = int(m)
+        s = int(s) / 60
+        time_in_minutes = int(h) * 60 + m + s
     except:
         h, m = string_time.split(':')
-        m = int(m) / 60
-        h = int(h) + m
-    return h
+        m = int(m)
+        time_in_minutes = int(h) * 60 + m
+    return time_in_minutes
 
 
-def formartar_tempo(hour):
+def format_time(minute):
+    hour = minute / 60
     new_hour = int(hour // 1)
     new_minute = int((hour % 1) * 60)
     if new_minute <= 9:
@@ -378,15 +356,15 @@ def generate_pau_sebo_table(pilots_database):
         items=['Trigrama', 'Tempo total de voo', 'Posição']
     )
 
-    pau_sebo['Horas totais'] = pau_sebo['Tempo total de voo'].apply(lambda x: formarted_time_to_hourstime(x))
-    pau_sebo = pau_sebo.groupby(['Trigrama', 'Posição']).aggregate({'Horas totais':'sum'})
+    pau_sebo['Horas totais'] = pau_sebo['Tempo total de voo'].apply(lambda x: transform_formattedtime_to_minutes(x))
+    pau_sebo = pau_sebo.groupby(['Trigrama', 'Posição']).aggregate({'Horas totais': 'sum'})
     pau_sebo_agrupado = pau_sebo.pivot_table(values='Horas totais', index='Trigrama', columns='Posição').reset_index()
     pau_sebo_agrupado = pau_sebo_agrupado.fillna(0)
     pau_sebo_agrupado['Horas totais'] = pau_sebo_agrupado['LSP'] + pau_sebo_agrupado['RSP']
-    pau_sebo_agrupado['Horas Totais'] = pau_sebo_agrupado['Horas totais'].apply(lambda x: formartar_tempo(x))
+    pau_sebo_agrupado['Horas Totais'] = pau_sebo_agrupado['Horas totais'].apply(lambda x: format_time(x))
     pau_sebo_agrupado['Meta'] = 130
-    pau_sebo_agrupado['LSP:'] = pau_sebo_agrupado['LSP'].apply(lambda x: formartar_tempo(x))
-    pau_sebo_agrupado['RSP:'] = pau_sebo_agrupado['RSP'].apply(lambda x: formartar_tempo(x))
+    pau_sebo_agrupado['LSP:'] = pau_sebo_agrupado['LSP'].apply(lambda x: format_time(x))
+    pau_sebo_agrupado['RSP:'] = pau_sebo_agrupado['RSP'].apply(lambda x: format_time(x))
 
     pau_sebo_chart_base = alt.Chart(pau_sebo_agrupado)
     pau_sebo_chart1 = pau_sebo_chart_base.mark_bar(opacity=0.8).encode(
@@ -410,6 +388,7 @@ def generate_pau_sebo_table(pilots_database):
     st.altair_chart((pau_sebo_chart3 + pau_sebo_chart1 + pau_sebo_chart2 + pau_sebo_chart4),
                     use_container_width=True)
 
+
 def trocar_nome_por_trigrama(posto_nome):
     lista_tripulantes = militar.tripulantes_list
     first = next(filter(lambda x: x.nome_guerra in posto_nome, lista_tripulantes), None)
@@ -417,3 +396,23 @@ def trocar_nome_por_trigrama(posto_nome):
         return None
     else:
         return first.trigrama
+
+
+def generate_esquadron_data(data):
+    db_esquadron = data.filter(items=['Matrícula da aeronave',
+                                      'Tipo de Registro',
+                                      'Tempo total de voo',
+                                      'Esforço Aéreo',
+                                      'Consumo Combustível (kg)',
+                                      'Dados - Decolagem'])
+
+    db_esquadron['Tempo total de voo'] = db_esquadron['Tempo total de voo']. \
+        apply(lambda x: transform_formattedtime_to_minutes(x))
+
+    data_pattern = re.compile('[0-9]{2}-[0-9]{2}-[0-9]{4}')
+    db_esquadron['Data - DEP'] = db_esquadron['Dados - Decolagem'].apply(
+        lambda x: re.findall(data_pattern, x)[0])
+    db_esquadron['Data - DEP'] = pd.to_datetime(db_esquadron['Data - DEP'], dayfirst=True)
+    db_esquadron = db_esquadron.drop(columns='Dados - Decolagem')
+
+    return db_esquadron

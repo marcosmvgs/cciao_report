@@ -114,7 +114,7 @@ st.markdown(
     'Caso algum militar perceba alguma discrepância, '
     'favor avisar a CCIAO para que possamos ajustar o mais rápido possível e não trabalharmos com dados errados.')
 st.markdown('**A fonte da maior parte das informações é baseada na FACD de cada militar.**')
-st.markdown('***Dê preferência para visualizar os gráficos em uma tela de computador ao invés de celular. Devido ao'
+st.markdown('***Dê preferência para visualizar os gráficos em uma tela de computador ao invés de celular. Devido ao '
             'tamanho da tela do celular pode ser que alguns dados sejam omitidos, se mesmo assim estiver '
             ' visualizando no celular, habilite o modo Desktop nas opções do seu navegador e coloque o celular'
             ' na posição horizontal..***')

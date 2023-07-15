@@ -2,9 +2,10 @@ import constants
 import funcs
 import re
 import pandas as pd
+import altair as alt
 
 
-class EsquadronDb:
+class SquadronDb:
     def __init__(self,
                  raw_data):
         self.raw_data = raw_data
@@ -17,7 +18,7 @@ class EsquadronDb:
                                                    'Dados - Decolagem'])
 
         db_esquadron['Tempo total de voo'] = db_esquadron['Tempo total de voo']. \
-            apply(lambda x: funcs.transform_formattedtime_to_minutes(x))
+            apply(lambda x: funcs.transform_formated_time_to_minutes(x))
 
         data_pattern = re.compile('[0-9]{2}-[0-9]{2}-[0-9]{4}')
         db_esquadron['Data - DEP'] = db_esquadron['Dados - Decolagem'].apply(
@@ -72,7 +73,6 @@ class EsquadronDb:
         return dict_formated_values
 
     def group_by_month(self):
-
         db_esquadron_groupedby_month = self.db_esquadron.groupby(pd.Grouper(key='Data - DEP', freq='M')).aggregate(
             {'Tempo total de voo': 'sum'}).reset_index()
         db_esquadron_groupedby_month['Horas voadas'] = db_esquadron_groupedby_month['Tempo total de voo'].apply(
@@ -81,3 +81,20 @@ class EsquadronDb:
             lambda x: x / 60)
 
         return db_esquadron_groupedby_month
+
+    def generate_squadron_chart(self):
+        base_chart = self.group_by_month()
+        squadron_flight_hours_chart = alt.Chart(base_chart).mark_area(
+            line={'color': 'black', 'opacity': 0.5}, opacity=0.5,
+            point={'color': 'black', 'size': 90},
+            color=alt.Gradient(gradient='linear',
+                               stops=[alt.GradientStop(color='white',
+                                                       offset=0),
+                                      alt.GradientStop(color='darkgrey',
+                                                       offset=1)],
+                               x1=1, x2=1, y1=1, y2=0)).encode(
+            x=alt.X('Data - DEP:T', timeUnit='month', title=''),
+            y=alt.Y('sum(Tempo total de voo)', title='Horas no mês'),
+            tooltip=['Horas voadas'])
+
+        return squadron_flight_hours_chart

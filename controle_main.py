@@ -6,7 +6,6 @@ import funcs
 from google_sheets_connection import registro_de_voo
 from models.squadron_db import SquadronDb
 from models.pilots_db import PilotsDb
-import numpy as np
 from models.dashboard_controle import DashboardControle
 
 
@@ -37,7 +36,6 @@ total_flight_hours_chart = dashboard.generate_pilots_total_flight_hours_chart()
 # Dados Sidebar
 link_to_form = '[Adicionar Registro de Voo](https://form.jotform.com/231508987327062)'
 
-
 # EXIBIÇÃO DE DADOS
 # KPIS ESQUADRÃO
 st.markdown("### Quadro geral de horas de voo :hourglass:")
@@ -59,7 +57,6 @@ with col4:
     kpi_perc_voado_E99 = st.metric(label='Percentual voado E99', value=f'{kpi_values_formatted["perc voado E99"]}%')
     kpi_perc_voado_R99 = st.metric(label='Percentual voado R99', value=f'{kpi_values_formatted["perc voado R99"]}%')
 
-
 # HORAS DE VOO POR MÊS - ESQUADRÃO
 st.markdown('---')
 st.markdown('### Horas de voo por mês :chart:')
@@ -67,7 +64,6 @@ st.markdown('')
 st.markdown('')
 st.altair_chart(squadron_chart, use_container_width=True)
 st.markdown('---')
-
 
 # TABELA DE VOOS
 st.markdown('### Tabela de voos :airplane:')
@@ -93,7 +89,7 @@ st.markdown(f"#### Pau de Sebo - Pilotos")
 st.altair_chart(total_flight_hours_chart, use_container_width=True)
 
 st.markdown(f'#### Cesta Básica - {current_quarter}º Trimestre')
-st.dataframe(minimum_procedures_table, use_container_width=True)
+st.dataframe(minimum_procedures_table)
 
 
 # SIDEBAR

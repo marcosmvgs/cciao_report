@@ -110,7 +110,7 @@ class PilotsDb:
                 oi_list.append(oi)
                 tev_list.append(tev)
                 tev_ifr_list.append(tev_ifr)
-                tev_not_list.append(tev_not)
+                tev_not_list.append(str(tev_not))
                 traf_vis_list.append(traf_vis)
                 flaps_22_list.append(int(flaps_22))
                 ifr_sem_ap_list.append(int(ifr_sem_ap))

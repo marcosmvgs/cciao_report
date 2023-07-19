@@ -29,7 +29,7 @@ class DashboardControle:
         # Adicionando coluna de Procedimentos de precisão
         temp_df['Precisão'] = temp_df['Descida - Tipo'].apply(lambda x: self.count_tipo_proc(x)['PR'])
         temp_df['Não Precisão'] = temp_df['Descida - Tipo'].apply(lambda x: self.count_tipo_proc(x)['NP'])
-        temp_df['Noturno'] = temp_df['Tempo Noturno'].apply(lambda x: 1 if x != datetime.time(0, 0, 0) else 0)
+        temp_df['Noturno'] = temp_df['Tempo Noturno'].apply(lambda x: 1 if x != '0:00' else 0)
         temp_df = temp_df.drop(['Descida - Tipo', 'Tempo Noturno'], axis=1)
 
         minimum_procedures = temp_df.groupby('Trigrama').aggregate({'Flaps 22': 'sum',
@@ -40,7 +40,6 @@ class DashboardControle:
                                                                     'Não Precisão': 'sum'}).reset_index()
 
         minimum_procedures_db = self.fill_empty_values(data=minimum_procedures,
-                                                       trigrams=self.pilots,
                                                        fill_value=0)
         minimum_procedures_db.set_index('Trigrama', inplace=True)
         minimum_procedures_db_colored = minimum_procedures_db.style.applymap(self.stylize_minimum_procedures_table,
@@ -73,7 +72,6 @@ class DashboardControle:
         pau_sebo_agrupado['RSP:'] = pau_sebo_agrupado['RSP'].apply(lambda x: funcs.format_time(x))
 
         pau_sebo_agrupado = self.fill_empty_values(data=pau_sebo_agrupado,
-                                                   trigrams=self.pilots,
                                                    fill_value={
                                                        'Trigrama': '',
                                                        'LSP': 0,
@@ -113,13 +111,11 @@ class DashboardControle:
         adaptacao_database = self.data[(self.data['Posição'] == 'LSP') |
                                        (self.data['Posição'] == 'RSP')].filter(items=['Trigrama',
                                                                                       'Data/Hora - Pouso']). \
-            groupby('Trigrama').aggregate({'Data/Hora - Pouso': 'max'})
+            groupby('Trigrama').aggregate({'Data/Hora - Pouso': 'max'}).reset_index()
 
         fake_date = pd.to_datetime(datetime.datetime.today() - datetime.timedelta(days=100))
         adaptacao_database = self.fill_empty_values(data=adaptacao_database,
-                                                    trigrams=self.pilots,
                                                     fill_value=fake_date)
-        st.write(adaptacao_database)
 
         # Calculando quantos dias sem voar
         adaptacao_database['Hoje'] = pd.to_datetime(datetime.date.today())
@@ -203,12 +199,18 @@ class DashboardControle:
             return row['Dias sem voar'] + (3 * 365 + 1)
 
     @staticmethod
-    def fill_empty_values(data, trigrams, fill_value):
+    def fill_empty_values(data, fill_value):
 
         data = data.to_dict(orient='list')
-        data['Trigrama'] = list(map(lambda x: x.trigrama, tripulantes_list))
-        max_lengh = len(data['Trigrama'])
+        trigrams = list(map(lambda x: x.trigrama, tripulantes_list))
 
+        for trigram in trigrams:
+            if not trigram in data['Trigrama']:
+                data['Trigrama'].append(trigram)
+            else:
+                pass
+
+        max_lengh = len(data['Trigrama'])
         if isinstance(fill_value, dict):
             for key in data:
                 if len(data[key]) < max_lengh:

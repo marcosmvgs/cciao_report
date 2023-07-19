@@ -10,7 +10,7 @@ qualificacao_opr = {
     'FUC': instrutor,
     'ISC': instrutor,
     'MOT': operacional,
-    'MRC': 'AL',
+    'MRC': aluno,
     'SBR': instrutor,
     'SOE': aluno,
     'VLD': instrutor,
@@ -32,8 +32,6 @@ qualificacao_opr = {
     'TAL': instrutor,
     'FCI': aluno,
     'DED': instrutor,
-    
-
 }
 
 max_adaptacao = {
@@ -45,3 +43,8 @@ max_adaptacao = {
 HORAS_TOTAIS = 1370 * 60
 HORAS_TOTAIS_E99 = 920 * 60
 HORAS_TOTAIS_R99 = 450 * 60
+
+qualificacoes_operacionais = {
+    ''
+}
+

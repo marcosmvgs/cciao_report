@@ -14,7 +14,6 @@ st.set_page_config(layout='wide',
                    page_icon=':airplane')
 
 raw_flight_register = registro_de_voo.copy()
-
 # Dados de voos individuais
 flight_registers = PilotsDb(raw_flight_register)
 db_flight_registers = flight_registers.db_flight_registers

@@ -6,6 +6,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+import streamlit as st
 
 
 class GoogleSheetsApi:
@@ -46,9 +47,8 @@ class GoogleSheetsApi:
         return data
 
 
-scope = ['https://www.googleapis.com/auth/spreadsheets.readonly']
-spreadsheet_id = '1XRphnMCmqEzjdN5TTihmGWDQSQg_SgL81yxCEYz-dBk'
-
+scope = [st.secrets['google_sheets']['scopes']]
+spreadsheet_id = st.secrets['google_sheets']['spreadsheet_id']
 connection = GoogleSheetsApi(scopes=scope,
                              spread_sheet_id=spreadsheet_id)
 

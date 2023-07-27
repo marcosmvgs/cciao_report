@@ -1,4 +1,3 @@
-import altair as alt
 import datetime
 import streamlit as st
 import constants
@@ -79,7 +78,6 @@ if mostrar_voos:
         db_flight_registers_filtered_by_trigram = db_flight_registers.query("Trigrama == @selected_trigrams")
         st.dataframe(db_flight_registers_filtered_by_trigram)
 
-
 # DASHBOARD
 st.markdown(f"#### Adaptação Pilotos", unsafe_allow_html=True)
 st.altair_chart(maximum_noflight_days_chart, use_container_width=True)
@@ -89,7 +87,6 @@ st.altair_chart(total_flight_hours_chart, use_container_width=True)
 
 st.markdown(f'#### Cesta Básica - {current_quarter}º Trimestre')
 st.dataframe(minimum_procedures_table)
-
 
 # SIDEBAR
 st.sidebar.markdown(f'{link_to_form} :pencil2:', unsafe_allow_html=True)

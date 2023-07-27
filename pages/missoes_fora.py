@@ -3,7 +3,7 @@ import streamlit as st
 import altair as alt
 import numpy as np
 import models.tripulante as tripulantes
-from google_sheets_connection import missoes_fora_sede
+from google_sheets_connection import GoogleSheetsApi, scope, spreadsheet_id
 
 
 def gerar_grafico_missoes_fora_de_sede(data, missao):
@@ -86,8 +86,11 @@ st.set_page_config(page_icon=':airplane:',
                    layout='wide',
                    initial_sidebar_state='collapsed')
 
+connection = GoogleSheetsApi(scopes=scope,
+                             spread_sheet_id=spreadsheet_id)
 
-tabela = missoes_fora_sede
+
+tabela = connection.get_sheet('Dias fora de sede!A:F')
 missoes_fora_sede_graficos = carregar_dados_para_graficos(tabela)
 missoes_fora_sede_tabelas = carregar_dados_para_tabelas(tabela)
 

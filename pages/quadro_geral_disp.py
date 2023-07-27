@@ -37,6 +37,7 @@ connection = GoogleSheetsApi(scopes=scope,
 
 missoes_fora_sede_table = connection.get_sheet('Dias fora de sede!A:F')
 indisponibilidades_table = connection.get_sheet('Indisponibilidades!A:H')
+sobreaviso_table = connection.get_sheet('Sobreaviso em sede')
 
 motivos_indisp = indisponibilidades_table['Motivo'].unique()
 missoes = missoes_fora_sede_table['Missão'].unique()

@@ -13,6 +13,8 @@ def pintar_celulas(x):
     if x in motivos_indisp:
         if x == 'PARTICULAR':
             color = 'rgba(121, 121, 121, 0.42)'
+        elif x == 'MARYBA':
+            color = 'rgba(0, 130, 127, 0.3)'
         else:
             color = 'rgba(255, 189, 30, 0.51)'
     elif x in missoes:
@@ -88,10 +90,8 @@ for i, row in missoes_fora_sede_table.iterrows():
 for i, row in indisponibilidades_table.iterrows():
     trigrama = row[0].strip()
     motivo = row[1].strip()
-    obs = row[2].strip()
     inicio = row[3].strip()
-    final = row[5].strip()
-    tipo = row[7].strip()
+    final = row[4].strip()
 
     df_quadro_geral[trigrama].loc[pd.to_datetime(inicio, format="%d/%m/%Y"):
                                   pd.to_datetime(final, format="%d/%m/%Y")] = motivo
@@ -109,4 +109,4 @@ df_quadro_geral['Datas'] = df_quadro_geral['Datas'].dt.strftime('%d/%b - %a')
 df_quadro_geral.set_index('Datas', inplace=True)
 estilizada = df_quadro_geral.swapaxes('index', 'columns').style.applymap(pintar_celulas)
 
-st.dataframe(estilizada, use_container_width=True, height=800)
+st.dataframe(estilizada, use_container_width=True, height=1000)

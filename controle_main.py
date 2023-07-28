@@ -2,7 +2,7 @@ import datetime
 import streamlit as st
 import constants
 import funcs
-from google_sheets_connection import registro_de_voo
+from google_sheets_connection import GoogleSheetsApi, scope, spreadsheet_id
 from models.squadron_db import SquadronDb
 from models.pilots_db import PilotsDb
 from models.dashboard_controle import DashboardControle
@@ -12,7 +12,10 @@ st.set_page_config(layout='wide',
                    page_title='2º/6º GAV - CCIAO',
                    page_icon=':airplane')
 
-raw_flight_register = registro_de_voo.copy()
+connection = GoogleSheetsApi(scopes=scope,
+                             spread_sheet_id=spreadsheet_id)
+
+raw_flight_register = connection.get_sheet('Registro de Voo - CCIAO!A:W')
 # Dados de voos individuais
 flight_registers = PilotsDb(raw_flight_register)
 db_flight_registers = flight_registers.db_flight_registers

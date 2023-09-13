@@ -67,7 +67,7 @@ funcoes = list(dados_dos_militares['Função a bordo 1'].replace('', np.nan).dro
 st.markdown('## Quadro geral de Indisponibilidades')
 st.markdown('Este quadro dá uma visão de geral de quais tripulantes estão disponíveis para missões do SOP em cada uma'
             ' das datas')
-st.markdown('Selecione abaixo o intervalo de datas que deseja verificar')
+st.markdown('Selecione abaixo intervalo de datas que deseja verificar')
 st.markdown('**Os dados são puxados de planilhas da CCIAO**')
 
 col1, col2 = st.columns(2)

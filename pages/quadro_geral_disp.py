@@ -1,7 +1,12 @@
+import re
+
+import numpy as np
 import streamlit as st
 import pandas as pd
 from models.tripulante import tripulantes_list
 from google_sheets_connection import GoogleSheetsApi, scope, spreadsheet_id
+import datetime
+
 
 st.set_page_config(layout='wide',
                    page_title='2º/6º GAV - CCIAO',
@@ -21,37 +26,14 @@ def pintar_celulas(x):
         color = 'rgba(255, 30, 30, 0.42)'
     elif x == 'SOBREAVISO':
         color = 'rgba(121, 53, 0, 0.47)'
+    elif x == 'FÉRIAS':
+        color = 'rgba(193, 0, 193, 0.8)'
     else:
         color = None
     if color is None:
         return None
     else:
         return f'background-color: {color}'
-
-
-connection = GoogleSheetsApi(scopes=scope,
-                             spread_sheet_id=spreadsheet_id)
-
-missoes_fora_sede_table = connection.get_sheet('Dias fora de sede!A:F')
-indisponibilidades_table = connection.get_sheet('Indisponibilidades!A:H')
-sobreaviso_table = connection.get_sheet('Sobreaviso em sede')
-
-motivos_indisp = indisponibilidades_table['Motivo'].unique()
-missoes = missoes_fora_sede_table['Missão'].unique()
-
-st.markdown('## Quadro geral de Indisponibilidades')
-st.markdown('Este quadro dá uma visão de geral de quais tripulantes estão disponíveis para missões do SOP em cada uma'
-            ' das datas')
-st.markdown('Selecione abaixo o intervalo de datas que deseja verificar')
-st.markdown('**Os dados são puxados de planilhas da CCIAO**')
-
-col1, col2 = st.columns(2)
-with col1:
-    initial_date = st.date_input(label='Início')
-with col2:
-    final_date = st.date_input(label='Final', value=pd.to_datetime('2023-09-02'))
-
-st.markdown('#### Legenda')
 
 
 def pintar_legendas(x):
@@ -62,6 +44,50 @@ def pintar_legendas(x):
 
     return f'background-color: {color[x]}'
 
+def pintar_equipagens(x):
+    return
+
+# Conexão com google sheets
+connection = GoogleSheetsApi(scopes=scope,
+                             spread_sheet_id=spreadsheet_id)
+
+# Tabelas
+missoes_fora_sede_table = connection.get_sheet('Dias fora de sede!A:F')
+indisponibilidades_table = connection.get_sheet('Indisponibilidades!A:H')
+sobreaviso_table = connection.get_sheet('Sobreaviso em sede')
+plano_ferias_table = connection.get_sheet('Plano de Férias 2°/6° GAV')
+dados_dos_militares = connection.get_sheet('Dados dos militares')
+
+motivos_indisp = indisponibilidades_table['Motivo'].unique()
+missoes = missoes_fora_sede_table['Missão'].unique()
+
+trigramas = dados_dos_militares['Trigramas'].to_list()
+funcoes = list(dados_dos_militares['Função a bordo 1'].replace('', np.nan).dropna().unique())
+
+st.markdown('## Quadro geral de Indisponibilidades')
+st.markdown('Este quadro dá uma visão de geral de quais tripulantes estão disponíveis para missões do SOP em cada uma'
+            ' das datas')
+st.markdown('Selecione abaixo o intervalo de datas que deseja verificar')
+st.markdown('**Os dados são puxados de planilhas da CCIAO**')
+
+col1, col2 = st.columns(2)
+with col1:
+    initial_date_box = st.date_input(label='Início')
+with col2:
+    timedelta = datetime.timedelta(days=15)
+    final_date = datetime.date.today() + timedelta
+    final_date_box = st.date_input(label='Final', value=final_date)
+
+# Criando datas a partir da inicial e final
+dates = pd.date_range(initial_date_box, final_date_box, freq='D')
+
+df_quadro_geral = pd.DataFrame(columns=trigramas, index=dates, data='')
+
+trigramas_selecionados = st.multiselect(label='Filtrar trigramas', options=trigramas)
+
+st.markdown('#### Equipagens por data e função')
+
+st.markdown('#### Legenda')
 
 legenda = {'1': ['Missão fora de sede'],
            '2': ['Indisp não Particular'],
@@ -70,11 +96,6 @@ legenda = {'1': ['Missão fora de sede'],
 
 legenda_table = pd.DataFrame(legenda)
 st.dataframe(legenda_table.style.applymap(pintar_legendas))
-
-
-dates = pd.date_range(initial_date, final_date, freq='D')
-trigramas = list(map(lambda x: x.trigrama, tripulantes_list))
-df_quadro_geral = pd.DataFrame(columns=trigramas, index=dates, data='')
 
 estilizada = None
 for i, row in missoes_fora_sede_table.iterrows():
@@ -104,9 +125,51 @@ for i, row in sobreaviso_table.iterrows():
     df_quadro_geral[trigrama].loc[pd.to_datetime(inicio_sobreaviso, format="%d/%m/%Y"):
                                   pd.to_datetime(termino_sobreaviso, format="%d/%m/%Y")] = 'SOBREAVISO'
 
+for i, row in plano_ferias_table.iterrows():
+    trigrama = row[2].strip()
+
+    pattern = re.compile("Início: (?P<inicio>(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-20\d\d), Término: "
+                         "(?P<termino>(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-20\d\d), Tipo de afastamento: "
+                         "(?P<tipo>(Dispensa como recompensa|Férias restantes|Férias|Desconto em Férias|Parcela de Férias|Outro.))\s*")
+
+    if row[3] == 'NÃO':
+        inicio_ferias = None
+        termino_ferias = None
+
+    else:
+        periodos = row[4].strip()
+        results = re.finditer(pattern, periodos)
+
+        for result in results:
+            inicio_ferias = datetime.datetime.strptime(result.group('inicio'), '%d-%m-%Y')
+            termino_ferias = datetime.datetime.strptime(result.group('termino'), '%d-%m-%Y')
+
+            df_quadro_geral[trigrama].loc[inicio_ferias:termino_ferias] = "FÉRIAS"
+
 df_quadro_geral.reset_index(inplace=True, names='Datas')
 df_quadro_geral['Datas'] = df_quadro_geral['Datas'].dt.strftime('%d/%b - %a')
 df_quadro_geral.set_index('Datas', inplace=True)
-estilizada = df_quadro_geral.swapaxes('index', 'columns').style.applymap(pintar_celulas)
+lista_datas_selecionadas = df_quadro_geral.index.to_list()
+equipagens_table = pd.DataFrame(columns=funcoes,
+                                index=lista_datas_selecionadas,
+                                data='')
+if not trigramas_selecionados:
+    pass
+else:
+    df_quadro_geral = df_quadro_geral[trigramas_selecionados]
 
-st.dataframe(estilizada, use_container_width=True, height=1000)
+df_quadro_geral_eixos_invertidos = df_quadro_geral.swapaxes('index', 'columns')
+for i, row in equipagens_table.iterrows():
+    trigramas_disponiveis_no_dia = df_quadro_geral_eixos_invertidos[i][df_quadro_geral_eixos_invertidos[i].replace('', np.nan).isnull()].index.to_list()
+    contagem_funcoes = dados_dos_militares.loc[dados_dos_militares['Trigramas'].isin(trigramas_disponiveis_no_dia)].value_counts(subset=['Função a bordo 1'])
+    for indx, value in contagem_funcoes.items():
+        funcao = indx
+        qtde = value
+        equipagens_table.loc[i][funcao] = value
+
+equipagens_table_estilizada = equipagens_table.style.applymap(pintar_equipagens)
+st.dataframe(equipagens_table, use_container_width=True)
+
+estilizada = df_quadro_geral_eixos_invertidos.style.applymap(pintar_celulas)
+
+st.dataframe(estilizada, use_container_width=True, height=4000)

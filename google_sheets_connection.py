@@ -46,13 +46,59 @@ class GoogleSheetsApi:
         data = pd.DataFrame(columns=values[0], data=values[1:])
         return data
 
+    def add_flight_register(self, flight_info):
+        registro = self.get_sheet('Registro de Voo!A:T')
+        ultima_linha = registro.shape[0] + 1
 
-scope = [st.secrets['google_sheets']['scopes']]
+        self.spreadsheet.values().update(
+            spreadsheetId=spreadsheet_id,
+            range=f'Registro de Voo!A{ultima_linha + 1}',
+            valueInputOption='USER_ENTERED',
+            body={'values': flight_info}
+        ).execute()
+
+    def delete_flight_register(self, flight_id):
+
+        pass
+
+    def update_flight_register(self, flight_id):
+        pass
+
+    def find_flight_by_id(self, flight_id):
+        pass
+
+    def find_fligth_row(self, flight_id):
+        all_data = self.get_sheet('Registro de Voo!A:T')
+        index_flight = all_data.index[all_data['ID'] is True]
+
+
+
+
+scope = st.secrets['google_sheets']['scopes']
 spreadsheet_id = st.secrets['google_sheets']['spreadsheet_id']
-# connection = GoogleSheetsApi(scopes=scope,
-#                              spread_sheet_id=spreadsheet_id)
+connection = GoogleSheetsApi(scopes=scope,
+                             spread_sheet_id=spreadsheet_id)
 
-# missoes_fora_sede = connection.get_sheet('Dias fora de sede!A:F')
-# indisponibilidades = connection.get_sheet('Indisponibilidades!A:H')
-# registro_de_voo = connection.get_sheet('Registro de Voo - CCIAO!A:W')
-
+# request_body_delete_flight_register = {
+#     'requests': [
+#         {
+#             'deleteRange': {
+#                 'range': {
+#                     "sheetId": 2088240049,
+#                     "startRowIndex": 1,
+#                     "endRowIndex": 2
+#                 },
+#                 'shiftDimension': 'ROWS'
+#             }
+#         }
+#     ]
+# }
+#
+# connection.spreadsheet.batchUpdate(
+#     spreadsheetId=spreadsheet_id,
+#     body=request_body_delete_flight_register
+# ).execute()
+registros = connection.get_sheet('Registro de Voo!A:T')
+index_flight = registros.index[registros['ID'] == 'marcos']
+print(registros)
+print(index_flight + 2)

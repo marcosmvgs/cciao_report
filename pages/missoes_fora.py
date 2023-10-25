@@ -34,7 +34,8 @@ def carregar_dados_para_graficos(gs_data):
         lambda x: int(x.days) + 1)
 
     lista_trip = tripulantes.tripulantes_list
-    todos_trigramas = set(map(lambda x: x.trigrama, lista_trip))
+    lista_oficiais = filter(lambda x: x.isoficial == True, lista_trip)
+    todos_trigramas = set(map(lambda x: x.trigrama, lista_oficiais))
 
     trigramas_fora_sede = gs_data['Trigrama'].to_list()
 

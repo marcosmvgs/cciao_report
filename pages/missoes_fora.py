@@ -26,6 +26,7 @@ def gerar_grafico_missoes_fora_de_sede(data, missao):
 
 @st.cache_data
 def carregar_dados_para_graficos(gs_data):
+
     gs_data['Ida'] = pd.to_datetime(gs_data['Ida'], format='%d/%m/%Y')
     gs_data['Volta'] = pd.to_datetime(gs_data['Volta'], format='%d/%m/%Y')
 
@@ -34,19 +35,17 @@ def carregar_dados_para_graficos(gs_data):
         lambda x: int(x.days) + 1)
 
     lista_trip = tripulantes.tripulantes_list
-    lista_oficiais = filter(lambda x: x.isoficial == True, lista_trip)
-    todos_trigramas = set(map(lambda x: x.trigrama, lista_oficiais))
+    lista_trigramas = list(map(lambda x: x.trigrama, filter(lambda x: x.isoficial == True, lista_trip)))
+    gs_data = gs_data[gs_data['Trigrama'].isin(lista_trigramas)]
 
     trigramas_fora_sede = gs_data['Trigrama'].to_list()
-
-    # Essa operação me dá uma lista com os trigramas que não ficaram fora de sede ainda
-    trigramas_em_casa = list(todos_trigramas - set(trigramas_fora_sede))
+    oficiais_em_casa = list(set(lista_trigramas) - set(trigramas_fora_sede))
 
     lista_de_none = []
-    for i in range(len(trigramas_em_casa)):
+    for i in range(len(oficiais_em_casa)):
         lista_de_none.append('')
 
-    col_trigramas = trigramas_fora_sede + trigramas_em_casa
+    col_trigramas = trigramas_fora_sede + oficiais_em_casa
     col_missao = gs_data['Missão'].to_list() + lista_de_none
     col_ida = gs_data['Ida'].to_list() + lista_de_none
     col_volta = gs_data['Volta'].to_list() + lista_de_none
@@ -100,6 +99,8 @@ missoes_fora_sede_tabelas['Ida'] = missoes_fora_sede_tabelas['Ida'].apply(lambda
 missoes_fora_sede_tabelas['Volta'] = missoes_fora_sede_tabelas['Volta'].apply(lambda x: x.date())
 
 # Organizando os dados em wide-data - cada missão é uma coluna
+lista_oficiais = map(lambda x: x.trigrama, filter(lambda x: x.isoficial, tripulantes.tripulantes_list))
+missoes_fora_sede_tabelas = missoes_fora_sede_tabelas[missoes_fora_sede_tabelas['Trigrama'].isin(lista_oficiais)]
 pivot_table = pd.pivot_table(data=missoes_fora_sede_tabelas.reset_index(),
                              index=['Trigrama', 'Status'],
                              values='Dias fora de sede',

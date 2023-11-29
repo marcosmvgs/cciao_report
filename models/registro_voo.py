@@ -1,4 +1,3 @@
-import datetime
 from google_sheets_connection import GoogleSheetsApi, scope, spreadsheet_id
 import pandas as pd
 import streamlit as st

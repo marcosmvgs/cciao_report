@@ -15,7 +15,7 @@ st.set_page_config(layout='wide',
 connection = GoogleSheetsApi(scopes=scope,
                              spread_sheet_id=spreadsheet_id)
 
-raw_flight_register = connection.get_sheet('Registro de Voo - CCIAO!A:W')
+raw_flight_register = connection.get_sheet('Registro de Voo')
 # Dados de voos individuais
 flight_registers = PilotsDb(raw_flight_register)
 db_flight_registers = flight_registers.db_flight_registers
